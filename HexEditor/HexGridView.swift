@@ -29,7 +29,7 @@ struct HexGridView: View {
     let offsetSpacing: CGFloat = 10
     let hexCellWidth: CGFloat = 24
     let hexCellSpacing: CGFloat = 4
-    let groupingSpacing: CGFloat = 4
+    let groupingSpacing: CGFloat = 12
     let dividerWidth: CGFloat = 1
     let asciiCellWidth: CGFloat = 10
     

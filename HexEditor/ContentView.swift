@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var isOverwriteMode = false
     @State private var byteGrouping = 1
     @State private var hexInputMode = false
+    @State private var showInspector = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,8 +34,10 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 // Enhanced inspector panel
-                FileInfoView(document: document, selection: $selection)
-                    .frame(width: 280)
+                if showInspector {
+                    FileInfoView(document: document, selection: $selection)
+                        .frame(width: 280)
+                }
             }
             .frame(maxHeight: .infinity)
             
@@ -102,6 +105,14 @@ struct ContentView: View {
                     Label("Checksum", systemImage: "number.square")
                 }
                 .help("Calculate checksums")
+                
+                Divider()
+                
+                // Inspector toggle
+                Button(action: { showInspector.toggle() }) {
+                    Label("Inspector", systemImage: showInspector ? "sidebar.right" : "sidebar.right")
+                }
+                .help(showInspector ? "Hide Inspector" : "Show Inspector")
             }
         }
         .sheet(isPresented: $showJumpToOffset) {
