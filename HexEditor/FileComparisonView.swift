@@ -12,7 +12,12 @@ struct FileComparisonView: View {
     
     @State private var sortedDiffIndices: [Int] = []
     @State private var currentDiffIndex: Int = -1
-    @State private var scrollTarget: Int?
+    @State private var scrollTarget: ScrollTarget?
+    
+    struct ScrollTarget: Equatable {
+        let row: Int
+        let id = UUID()
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -184,7 +189,7 @@ struct FileComparisonView: View {
         let targetByteIndex = sortedDiffIndices[currentDiffIndex]
         // Calculate row index (assuming 16 bytes per row)
         let rowIndex = targetByteIndex / 16
-        scrollTarget = rowIndex
+        scrollTarget = ScrollTarget(row: rowIndex)
     }
 }
 
@@ -193,7 +198,7 @@ struct ComparisonHexGrid: View {
     @ObservedObject var document: HexDocument
     var diffResult: DiffResult?
     var isOriginal: Bool
-    @Binding var scrollTarget: Int?
+    @Binding var scrollTarget: FileComparisonView.ScrollTarget?
     @State private var highlightedRow: Int?
     
     let bytesPerRow = 16
@@ -244,11 +249,11 @@ struct ComparisonHexGrid: View {
             .onChange(of: scrollTarget) { oldValue, newValue in
                 if let target = newValue {
                     withAnimation(.easeInOut(duration: 0.5)) {
-                        proxy.scrollTo(target, anchor: .center)
+                        proxy.scrollTo(target.row, anchor: .center)
                     }
                     
                     // Flash highlight
-                    highlightedRow = target
+                    highlightedRow = target.row
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation {
                             highlightedRow = nil
