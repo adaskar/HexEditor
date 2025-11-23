@@ -3,6 +3,8 @@ import SwiftUI
 struct JumpToOffsetView: View {
     @ObservedObject var document: HexDocument
     @Binding var selection: Set<Int>
+    @Binding var cursorIndex: Int?
+    @Binding var selectionAnchor: Int?
     @Binding var isPresented: Bool
     @State private var offsetString: String = ""
     
@@ -39,6 +41,8 @@ struct JumpToOffsetView: View {
         if let offset = Int(cleanString, radix: 16) {
             if offset >= 0 && offset < document.buffer.count {
                 selection = [offset]
+                cursorIndex = offset
+                selectionAnchor = offset
                 isPresented = false
             }
         }

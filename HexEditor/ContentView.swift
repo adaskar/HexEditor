@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var byteGrouping = 8
     @State private var hexInputMode = false
     @State private var showInspector = false
+    @State private var cursorIndex: Int? = nil
+    @State private var selectionAnchor: Int? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,7 +31,9 @@ struct ContentView: View {
                     selection: $selection,
                     isOverwriteMode: $isOverwriteMode,
                     hexInputMode: $hexInputMode,
-                    byteGrouping: byteGrouping
+                    byteGrouping: byteGrouping,
+                    selectionAnchor: $selectionAnchor,
+                    cursorIndex: $cursorIndex
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
@@ -116,7 +120,13 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showJumpToOffset) {
-            JumpToOffsetView(document: document, selection: $selection, isPresented: $showJumpToOffset)
+            JumpToOffsetView(
+                document: document,
+                selection: $selection,
+                cursorIndex: $cursorIndex,
+                selectionAnchor: $selectionAnchor,
+                isPresented: $showJumpToOffset
+            )
         }
         .sheet(isPresented: $showSearch) {
             SearchView(document: document, selection: $selection, isPresented: $showSearch)

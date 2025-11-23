@@ -12,8 +12,8 @@ struct HexGridView: View {
     @StateObject private var hexInputHelper = HexInputHelper()
     @StateObject private var bookmarkManager = BookmarkManager()
     @State private var dragStart: Int?
-    @State private var selectionAnchor: Int?
-    @State private var cursorIndex: Int?
+    @Binding var selectionAnchor: Int?
+    @Binding var cursorIndex: Int?
     @State private var focusedPane: FocusedPane = .hex
     @State private var showInsertDialog = false
     @State private var insertPosition = 0
@@ -78,18 +78,19 @@ struct HexGridView: View {
                     .padding(.top, 8)
                 }
                 
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        let totalBytes = document.buffer.count
-                        let totalRows = (totalBytes + bytesPerRow - 1) / bytesPerRow
-                        
-                        ForEach(0..<totalRows, id: \.self) { rowIndex in
-                            HStack(alignment: .center, spacing: 0) {
-                                // Offset
-                                Text(String(format: "%08X", rowIndex * bytesPerRow))
-                                    .font(.monospaced(.caption)())
-                                    .foregroundColor(ByteColorScheme.offsetColor)
-                                    .frame(width: offsetWidth, alignment: .leading)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            let totalBytes = document.buffer.count
+                            let totalRows = (totalBytes + bytesPerRow - 1) / bytesPerRow
+                            
+                            ForEach(0..<totalRows, id: \.self) { rowIndex in
+                                HStack(alignment: .center, spacing: 0) {
+                                    // Offset
+                                    Text(String(format: "%08X", rowIndex * bytesPerRow))
+                                        .font(.monospaced(.caption)())
+                                        .foregroundColor(ByteColorScheme.offsetColor)
+                                        .frame(width: offsetWidth, alignment: .leading)
                                 
                                 Spacer().frame(width: offsetSpacing)
                                 
@@ -323,6 +324,7 @@ struct HexGridView: View {
                                 Spacer()
                             }
                             .frame(height: rowHeight)
+                            .id(rowIndex)
                         }
                     }
                     .padding(16)
@@ -335,6 +337,15 @@ struct HexGridView: View {
                                 finalizeDrag()
                             }
                     )
+                    .onChange(of: selection) { newSelection in
+                        if let minIndex = newSelection.min() {
+                            let rowIndex = minIndex / bytesPerRow
+                            withAnimation {
+                                proxy.scrollTo(rowIndex, anchor: .center)
+                            }
+                        }
+                    }
+                    }
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 0)
