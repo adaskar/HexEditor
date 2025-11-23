@@ -62,33 +62,38 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                // Navigation tools
+                // Navigation & Search
                 Button(action: { showJumpToOffset = true }) {
                     Label("Jump to Offset", systemImage: "arrow.right.circle")
                 }
                 .help("Jump to a specific offset (⌘J)")
-                
+
                 Button(action: { showSearch = true }) {
                     Label("Find", systemImage: "magnifyingglass")
                 }
                 .help("Search for data (⌘F)")
-                
+
                 Button(action: { showStrings = true }) {
                     Label("Strings", systemImage: "text.quote")
                 }
                 .help("Extract strings")
-                
+
                 Divider()
-                
-                // Edit tools
-                Button(action: { showQuickActions = true }) {
-                    Label("Quick Actions", systemImage: "wand.and.stars")
+
+                // Data Analysis
+                Button(action: { showStatistics = true }) {
+                    Label("Statistics", systemImage: "chart.bar")
                 }
-                .help("Quick editing actions")
-                
+                .help("View file statistics")
+
+                Button(action: { showChecksum = true }) {
+                    Label("Checksum", systemImage: "number.square")
+                }
+                .help("Calculate checksums")
+
                 Divider()
-                
-                // View tools
+
+                // View & Edit
                 Menu {
                     Picker("Grouping", selection: $byteGrouping) {
                         Text("1 Byte").tag(1)
@@ -101,30 +106,22 @@ struct ContentView: View {
                     Label("Grouping", systemImage: "square.grid.3x3")
                 }
                 .help("Change byte grouping")
-                
-                Button(action: { showStatistics = true }) {
-                    Label("Statistics", systemImage: "chart.bar")
-                }
-                .help("View file statistics")
-                
-                Button(action: { showChecksum = true }) {
-                    Label("Checksum", systemImage: "number.square")
-                }
-                .help("Calculate checksums")
-                
+
                 Button(action: { showBitmap = true }) {
                     Label("Bitmap", systemImage: "photo")
                 }
                 .help("Bitmap Visualizer")
-                
+
                 Button(action: { showFileComparison = true }) {
                     Label("Compare", systemImage: "arrow.left.arrow.right.square")
                 }
                 .help("Compare with another file")
-                
-                Divider()
-                
-                // Inspector toggle
+
+                Button(action: { showQuickActions = true }) {
+                    Label("Quick Actions", systemImage: "wand.and.stars")
+                }
+                .help("Quick editing actions")
+
                 Button(action: { showInspector.toggle() }) {
                     Label("Inspector", systemImage: showInspector ? "sidebar.right" : "sidebar.right")
                 }
