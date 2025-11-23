@@ -5,18 +5,30 @@ A powerful, native macOS hex editor built with SwiftUI, featuring advanced editi
 ## Screenshots
 
 ### Main Interface
-![Main Interface](screenshots/main-interface.png)
+![Main Interface](screenshots/main.png)
+*Main hex editor view with byte grouping and dual hex/ASCII panes*
 
-### Hex Input Mode
-![Hex Input Mode](screenshots/hex-input-mode.png)
+### Byte Grouping
+![Byte Grouping](screenshots/grouping.png)
+*Configurable byte grouping for better readability*
 
-### Inspector Panel
-![Inspector Panel](screenshots/inspector-panel.png)
+### Find & Jump to Offset
+![Find Dialog](screenshots/find.png)
+*Search for hex patterns or ASCII text*
 
-### Insert Data Dialog
-![Insert Data Dialog](screenshots/insert-data-dialog.png)
+![Jump to Offset](screenshots/joffset.png)
+*Quickly navigate to any offset in the file*
 
-> **Note**: To add screenshots, create a `screenshots` folder in your repository and upload images through GitHub's web interface, then they will automatically display here.
+### Analysis Tools
+![Checksum Calculator](screenshots/checksum.png)
+*Calculate MD5, SHA-1, and SHA-256 checksums*
+
+![Statistics View](screenshots/stats.png)
+*Byte distribution and file statistics*
+
+### Quick Actions
+![Quick Actions](screenshots/quick.png)
+*Batch operations for efficient editing*
 
 ## Features
 
