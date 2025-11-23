@@ -10,7 +10,7 @@ import SwiftUI
 struct StatusBarView: View {
     @ObservedObject var document: HexDocument
     @Binding var selection: Set<Int>
-    var isOverwriteMode: Bool
+    @Binding var isOverwriteMode: Bool
     @Binding var hexInputMode: Bool
     
     var body: some View {
@@ -59,22 +59,49 @@ struct StatusBarView: View {
             }
             
             Spacer()
-            
-            // Edit mode indicator
-            HStack(spacing: 4) {
-                Image(systemName: isOverwriteMode ? "pencil.slash" : "pencil")
-                    .font(.caption)
-                Text(isOverwriteMode ? "OVR" : "INS")
-                    .font(.caption.bold())
+
+            // Edit mode toggle (INS / OVR)
+            HStack(spacing: 0) {
+                Button(action: {
+                    isOverwriteMode = false
+                }) {
+                    Text("INS")
+                        .font(.caption.bold())
+                        .foregroundColor(isOverwriteMode ? .secondary : .white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(isOverwriteMode ? Color.clear : Color.blue)
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Button(action: {
+                    isOverwriteMode = true
+                }) {
+                    Text("OVR")
+                        .font(.caption.bold())
+                        .foregroundColor(isOverwriteMode ? .white : .secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(isOverwriteMode ? Color.orange : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .foregroundColor(isOverwriteMode ? .orange : .blue)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
+            .padding(2)
             .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(isOverwriteMode ? Color.orange.opacity(0.1) : Color.blue.opacity(0.1))
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
             )
-            
+
             // Editing mode toggle (ASCII / HEX)
             HStack(spacing: 0) {
                 Button(action: {

@@ -408,7 +408,7 @@ struct HexGridView: View {
                 isPresented: $showInsertDialog
             )
         }
-        .onChange(of: hexInputMode) { newValue in
+        .onChange(of: hexInputMode) { _, newValue in
             // Sync external binding to internal helper state
             Task { @MainActor in
                 if hexInputHelper.isHexInputMode != newValue {
@@ -417,7 +417,7 @@ struct HexGridView: View {
                 }
             }
         }
-        .onChange(of: hexInputHelper.isHexInputMode) { newValue in
+        .onChange(of: hexInputHelper.isHexInputMode) { _, newValue in
             // Sync internal helper state to external binding
             Task { @MainActor in
                 if hexInputMode != newValue {

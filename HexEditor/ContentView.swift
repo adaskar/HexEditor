@@ -54,7 +54,7 @@ struct ContentView: View {
             StatusBarView(
                 document: document,
                 selection: $selection,
-                isOverwriteMode: isOverwriteMode,
+                isOverwriteMode: $isOverwriteMode,
                 hexInputMode: $hexInputMode
             )
             .frame(height: 28)
@@ -81,12 +81,6 @@ struct ContentView: View {
                 Divider()
                 
                 // Edit tools
-                Button(action: { isOverwriteMode.toggle() }) {
-                    Label(isOverwriteMode ? "Overwrite" : "Insert", 
-                          systemImage: isOverwriteMode ? "pencil.slash" : "pencil")
-                }
-                .help(isOverwriteMode ? "Switch to Insert Mode" : "Switch to Overwrite Mode")
-                
                 Button(action: { showQuickActions = true }) {
                     Label("Quick Actions", systemImage: "wand.and.stars")
                 }
