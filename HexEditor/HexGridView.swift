@@ -337,7 +337,7 @@ struct HexGridView: View {
                                 finalizeDrag()
                             }
                     )
-                    .onChange(of: selection) { newSelection in
+                    .onChange(of: selection) { oldValue, newSelection in
                         if let minIndex = newSelection.min() {
                             let rowIndex = minIndex / bytesPerRow
                             withAnimation {
@@ -423,7 +423,6 @@ struct HexGridView: View {
         if colIndex == -1 {
             // Calculate where ASCII starts
             // It's after the hex loop finishes
-            let asciiStartX = currentX + 10 + 4 + 4 // Spacer(10) + Divider padding(4+4?) + Divider(1) ... roughly
             // Actually let's just use the loop end X
             
             if relativeX > currentX {
