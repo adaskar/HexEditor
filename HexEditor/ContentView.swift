@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var byteGrouping = 8
     @State private var hexInputMode = false
     @State private var showInspector = false
+    @State private var showStrings = false
     @State private var cursorIndex: Int? = nil
     @State private var selectionAnchor: Int? = nil
 
@@ -69,6 +70,11 @@ struct ContentView: View {
                     Label("Find", systemImage: "magnifyingglass")
                 }
                 .help("Search for data (⌘F)")
+                
+                Button(action: { showStrings = true }) {
+                    Label("Strings", systemImage: "text.quote")
+                }
+                .help("Extract strings")
                 
                 Divider()
                 
@@ -130,6 +136,15 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSearch) {
             SearchView(document: document, selection: $selection, isPresented: $showSearch)
+        }
+        .sheet(isPresented: $showStrings) {
+            StringsView(
+                document: document,
+                selection: $selection,
+                isPresented: $showStrings,
+                cursorIndex: $cursorIndex,
+                selectionAnchor: $selectionAnchor
+            )
         }
         .sheet(isPresented: $showChecksum) {
             ChecksumView(document: document, selection: $selection, isPresented: $showChecksum)

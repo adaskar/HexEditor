@@ -16,28 +16,68 @@ struct StatisticsView: View {
             if isLoading {
                 ProgressView("Calculating...")
             } else {
-                VStack(alignment: .leading) {
-                    Text("Entropy: \(String(format: "%.4f", entropy)) bits/byte")
+                VStack(alignment: .leading, spacing: 16) {
+                    // Entropy Section
+                    GroupBox(label: Label("Entropy", systemImage: "waveform.path.ecg")) {
+                        VStack(alignment: .leading) {
+                            Text("\(String(format: "%.4f", entropy)) bits/byte")
+                                .font(.title2.monospaced())
+                            
+                            ProgressView(value: entropy, total: 8.0)
+                                .tint(entropyColor)
+                            
+                            Text("0.0 = Order, 8.0 = Random/Encrypted")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(8)
+                    }
                     
-                    Text("Byte Distribution")
-                        .font(.subheadline)
-                        .padding(.top)
-                    
-                    GeometryReader { geometry in
-                        HStack(alignment: .bottom, spacing: 0) {
-                            if let maxCount = byteCounts.max(), maxCount > 0 {
-                                ForEach(0..<256) { i in
-                                    let height = CGFloat(byteCounts[i]) / CGFloat(maxCount) * geometry.size.height
-                                    Rectangle()
-                                        .fill(Color.accentColor)
-                                        .frame(width: geometry.size.width / 256, height: height)
+                    // Histogram Section
+                    GroupBox(label: Label("Byte Distribution", systemImage: "chart.bar.fill")) {
+                        VStack(alignment: .leading) {
+                            GeometryReader { geometry in
+                                HStack(alignment: .bottom, spacing: 0) {
+                                    if let maxCount = byteCounts.max(), maxCount > 0 {
+                                        ForEach(0..<256) { i in
+                                            let count = byteCounts[i]
+                                            let height = CGFloat(count) / CGFloat(maxCount) * geometry.size.height
+                                            
+                                            Rectangle()
+                                                .fill(Color.accentColor.opacity(0.8))
+                                                .frame(width: geometry.size.width / 256, height: height)
+                                                .help("Byte 0x\(String(format: "%02X", i)): \(count) occurrences")
+                                        }
+                                    }
                                 }
                             }
+                            .frame(height: 150)
+                            .background(Color.gray.opacity(0.1))
+                            .border(Color.gray.opacity(0.2))
+                            
+                            HStack {
+                                Text("0x00")
+                                Spacer()
+                                Text("0xFF")
+                            }
+                            .font(.caption.monospaced())
+                            .foregroundColor(.secondary)
                         }
+                        .padding(8)
                     }
-                    .frame(height: 200)
-                    .background(Color.gray.opacity(0.1))
-                    .border(Color.gray.opacity(0.2))
+                    
+                    // Summary
+                    GroupBox(label: Label("Summary", systemImage: "doc.text")) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Total Bytes: \(document.buffer.count)")
+                                Text("Unique Bytes: \(byteCounts.filter { $0 > 0 }.count)")
+                            }
+                            .font(.caption)
+                            Spacer()
+                        }
+                        .padding(8)
+                    }
                 }
             }
             
@@ -50,10 +90,16 @@ struct StatisticsView: View {
             }
         }
         .padding()
-        .frame(width: 600, height: 400)
+        .frame(width: 600, height: 500)
         .onAppear {
             calculateStatistics()
         }
+    }
+    
+    private var entropyColor: Color {
+        if entropy < 4.0 { return .green }
+        if entropy < 7.0 { return .orange }
+        return .red
     }
     
     private func calculateStatistics() {
@@ -62,6 +108,7 @@ struct StatisticsView: View {
         
         Task {
             var counts = Array(repeating: 0, count: 256)
+            // Use a simpler loop for now, optimization can come later if needed
             for byte in buffer {
                 counts[Int(byte)] += 1
             }
