@@ -329,23 +329,31 @@ struct HexGridView: View {
             }
             
         case .leftArrow:
-            if index > 0 { selection = [index - 1] }
-            hexInputHelper.clearPartialInput()
+            DispatchQueue.main.async {
+                if index > 0 { self.selection = [index - 1] }
+                self.hexInputHelper.clearPartialInput()
+            }
             return .handled
             
         case .rightArrow:
-            if index < document.buffer.count - 1 { selection = [index + 1] }
-            hexInputHelper.clearPartialInput()
+            DispatchQueue.main.async {
+                if index < self.document.buffer.count - 1 { self.selection = [index + 1] }
+                self.hexInputHelper.clearPartialInput()
+            }
             return .handled
             
         case .upArrow:
-            if index >= bytesPerRow { selection = [index - bytesPerRow] }
-            hexInputHelper.clearPartialInput()
+            DispatchQueue.main.async {
+                if index >= self.bytesPerRow { self.selection = [index - self.bytesPerRow] }
+                self.hexInputHelper.clearPartialInput()
+            }
             return .handled
             
         case .downArrow:
-            if index + bytesPerRow < document.buffer.count { selection = [index + bytesPerRow] }
-            hexInputHelper.clearPartialInput()
+            DispatchQueue.main.async {
+                if index + self.bytesPerRow < self.document.buffer.count { self.selection = [index + self.bytesPerRow] }
+                self.hexInputHelper.clearPartialInput()
+            }
             return .handled
             
         case .tab:
