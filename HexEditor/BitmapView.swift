@@ -13,51 +13,62 @@ struct BitmapView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Toolbar
-            HStack(spacing: 16) {
+            HStack(spacing: 8) {
                 Text("Bitmap Visualizer")
-                    .font(.headline)
-                
+                    .font(.system(size: 13, weight: .semibold))
+
                 Divider()
-                
-                VStack(alignment: .leading) {
-                    Text("Width (Stride): \(Int(width)) px")
-                        .font(.caption)
+
+                HStack(spacing: 6) {
+                    Text("Width:")
+                        .font(.system(size: 11))
                     Slider(value: $width, in: 1...1024, step: 1)
-                        .frame(width: 200)
+                        .frame(width: 100)
+                    Text("\(Int(width))")
+                        .font(.system(size: 11, design: .monospaced))
+                        .frame(width: 30)
                 }
-                
-                Picker("Format", selection: $pixelFormat) {
+
+                Picker("", selection: $pixelFormat) {
                     ForEach(PixelFormat.allCases) { format in
                         Text(format.rawValue).tag(format)
                     }
                 }
                 .pickerStyle(.menu)
-                .frame(width: 150)
-                
+                .frame(width: 100)
+                .font(.system(size: 11))
+
                 Divider()
-                
-                HStack {
+
+                HStack(spacing: 2) {
                     Button(action: { scale = max(0.5, scale - 0.5) }) {
                         Image(systemName: "minus.magnifyingglass")
+                            .font(.system(size: 11))
                     }
-                    
+                    .buttonStyle(.borderless)
+
                     Text("\(Int(scale * 100))%")
-                        .font(.monospaced(.body)())
-                        .frame(width: 50)
-                    
+                        .font(.system(size: 11, design: .monospaced))
+                        .frame(width: 30)
+
                     Button(action: { scale = min(10.0, scale + 0.5) }) {
                         Image(systemName: "plus.magnifyingglass")
+                            .font(.system(size: 11))
                     }
+                    .buttonStyle(.borderless)
                 }
-                
+
                 Spacer()
-                
+
                 Button("Close") {
                     isPresented = false
                 }
                 .keyboardShortcut(.cancelAction)
+                .font(.system(size: 11))
             }
-            .padding()
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .frame(height: 48)
             .background(Color(NSColor.controlBackgroundColor))
             
             Divider()
