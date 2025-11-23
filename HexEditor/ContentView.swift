@@ -52,6 +52,7 @@ struct ContentView: View {
                     isOverwriteMode: $isOverwriteMode,
                     hexInputMode: $hexInputMode,
                     byteGrouping: byteGrouping,
+                    showSearch: $showSearch,
                     selectionAnchor: $selectionAnchor,
                     cursorIndex: $cursorIndex
                 )

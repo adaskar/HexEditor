@@ -6,6 +6,7 @@ struct HexGridView: View {
     @Binding var isOverwriteMode: Bool
     @Binding var hexInputMode: Bool
     var byteGrouping: Int
+    @Binding var showSearch: Bool
     @Environment(\.undoManager) var undoManager
     @Environment(\.colorScheme) var colorScheme
     
@@ -17,6 +18,7 @@ struct HexGridView: View {
     @State private var focusedPane: FocusedPane = .hex
     @State private var showInsertDialog = false
     @State private var insertPosition = 0
+    @FocusState private var isFocused: Bool
     
     // Arrow key press-and-hold support
     @State private var arrowKeyTimer: Timer?
@@ -138,18 +140,30 @@ struct HexGridView: View {
                                                  )
                                                  .contentShape(Rectangle())
                                                  .contextMenu {
-                                                    // Copy operation
-                                                    Button(action: { 
-                                                        if !selection.contains(index) {
-                                                            selection = [index]
-                                                            cursorIndex = index
-                                                            selectionAnchor = index
-                                                        }
-                                                        copySelection()
-                                                    }) {
-                                                        Label("Copy", systemImage: "doc.on.doc")
-                                                    }
-                                                    .keyboardShortcut("c", modifiers: .command)
+                                                     // Copy Hex operation
+                                                     Button(action: {
+                                                         if !selection.contains(index) {
+                                                             selection = [index]
+                                                             cursorIndex = index
+                                                             selectionAnchor = index
+                                                         }
+                                                         copySelectionAsHex()
+                                                     }) {
+                                                         Label("Copy Hex", systemImage: "doc.on.doc")
+                                                     }
+                                                     .keyboardShortcut("c", modifiers: .command)
+
+                                                     // Copy ASCII operation
+                                                     Button(action: {
+                                                         if !selection.contains(index) {
+                                                             selection = [index]
+                                                             cursorIndex = index
+                                                             selectionAnchor = index
+                                                         }
+                                                         copySelectionAsAscii()
+                                                     }) {
+                                                         Label("Copy ASCII", systemImage: "text.quote")
+                                                     }
                                                     
                                                     // Paste operation
                                                     Button(action: {
@@ -248,18 +262,30 @@ struct HexGridView: View {
                                                 .background(isSelected ? ByteColorScheme.selectionColor : Color.clear)
                                                 .contentShape(Rectangle())
                                                 .contextMenu {
-                                                    // Copy operation
-                                                    Button(action: { 
-                                                        if !selection.contains(index) {
-                                                            selection = [index]
-                                                            cursorIndex = index
-                                                            selectionAnchor = index
-                                                        }
-                                                        copySelection()
-                                                    }) {
-                                                        Label("Copy", systemImage: "doc.on.doc")
-                                                    }
-                                                    .keyboardShortcut("c", modifiers: .command)
+                                                   // Copy Hex operation
+                                                   Button(action: {
+                                                       if !selection.contains(index) {
+                                                           selection = [index]
+                                                           cursorIndex = index
+                                                           selectionAnchor = index
+                                                       }
+                                                       copySelectionAsHex()
+                                                   }) {
+                                                       Label("Copy Hex", systemImage: "doc.on.doc")
+                                                   }
+                                                   .keyboardShortcut("c", modifiers: .command)
+
+                                                   // Copy ASCII operation
+                                                   Button(action: {
+                                                       if !selection.contains(index) {
+                                                           selection = [index]
+                                                           cursorIndex = index
+                                                           selectionAnchor = index
+                                                       }
+                                                       copySelectionAsAscii()
+                                                   }) {
+                                                       Label("Copy ASCII", systemImage: "text.quote")
+                                                   }
                                                     
                                                     // Paste operation
                                                     Button(action: {
@@ -348,6 +374,7 @@ struct HexGridView: View {
                     )
                     .onAppear {
                         self.scrollProxy = proxy
+                        self.isFocused = true
                     }
                     }
                 }
@@ -401,6 +428,7 @@ struct HexGridView: View {
                 return .ignored
             }
         }
+        .focused($isFocused)
         .sheet(isPresented: $showInsertDialog) {
             InsertDataView(
                 document: document,
@@ -558,7 +586,7 @@ struct HexGridView: View {
                 return .handled
             case "x":
                 // Cut selection
-                copySelection()
+                copySelectionAsHex()
                 if !selection.isEmpty {
                     let sortedIndices = selection.sorted(by: >)
                     performDelete(indices: sortedIndices)
@@ -579,7 +607,7 @@ struct HexGridView: View {
                 }
                 return .handled
             case "c":
-                copySelection()
+                copySelectionAsHex()
                 return .handled
             case "v":
                 pasteFromClipboard()
@@ -593,6 +621,9 @@ struct HexGridView: View {
                 return .handled
             case "b":
                 toggleBookmark(at: currentCursor)
+                return .handled
+            case "f":
+                showSearch = true
                 return .handled
             case "z":
                 // Let system handle undo
@@ -745,7 +776,7 @@ struct HexGridView: View {
         document.replace(at: index, with: byte, undoManager: undoManager)
     }
     
-    private func copySelection() {
+    private func copySelectionAsHex() {
         guard !selection.isEmpty else { return }
         let sortedIndices = selection.sorted()
         let bytes = sortedIndices.map { document.buffer[$0] }
@@ -753,6 +784,22 @@ struct HexGridView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(hexString, forType: .string)
+    }
+
+    private func copySelectionAsAscii() {
+        guard !selection.isEmpty else { return }
+        let sortedIndices = selection.sorted()
+        let bytes = sortedIndices.map { document.buffer[$0] }
+        let asciiString = bytes.map { byte in
+            if byte >= 32 && byte <= 126 {
+                return String(UnicodeScalar(byte))
+            } else {
+                return "·"
+            }
+        }.joined()
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(asciiString, forType: .string)
     }
     
     private func pasteFromClipboard() {
