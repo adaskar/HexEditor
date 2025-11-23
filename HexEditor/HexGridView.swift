@@ -21,6 +21,7 @@ struct HexGridView: View {
     // Arrow key press-and-hold support
     @State private var arrowKeyTimer: Timer?
     @State private var currentArrowDirection: ArrowDirection?
+    @State private var scrollProxy: ScrollViewProxy?
     
     enum ArrowDirection {
         case up, down, left, right
@@ -345,13 +346,8 @@ struct HexGridView: View {
                                 finalizeDrag()
                             }
                     )
-                    .onChange(of: selection) { oldValue, newSelection in
-                        if let minIndex = newSelection.min() {
-                            let rowIndex = minIndex / bytesPerRow
-                            withAnimation {
-                                proxy.scrollTo(rowIndex, anchor: .center)
-                            }
-                        }
+                    .onAppear {
+                        self.scrollProxy = proxy
                     }
                     }
                 }
@@ -821,6 +817,12 @@ struct HexGridView: View {
                 if currentCursor + self.bytesPerRow < self.document.buffer.count {
                     moveSelection(to: currentCursor + self.bytesPerRow)
                 }
+            }
+            
+            // Smart scroll: only scroll to keep cursor visible
+            if let scrollProxy = self.scrollProxy, let cursor = self.cursorIndex {
+                let rowIndex = cursor / self.bytesPerRow
+                scrollProxy.scrollTo(rowIndex)
             }
         }
     }
