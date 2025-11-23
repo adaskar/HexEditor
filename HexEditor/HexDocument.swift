@@ -9,7 +9,7 @@ final class HexDocument: ReferenceFileDocument {
         self.buffer = GapBuffer(data: initialData)
     }
 
-    static var readableContentTypes: [UTType] { [.data] }
+    static var readableContentTypes: [UTType] { [.item] }
 
     required init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
