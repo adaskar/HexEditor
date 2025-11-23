@@ -108,24 +108,37 @@ struct FileInfoView: View {
     
     @ViewBuilder
     private var stringsView: some View {
-        if let index = selection.min(), index < document.buffer.count {
-            let maxLength = min(32, document.buffer.count - index)
+        if !selection.isEmpty {
+            let sortedIndices = selection.sorted()
+            let selectedBytes = sortedIndices.map { document.buffer[$0] }
             
             VStack(alignment: .leading, spacing: 8) {
-                sectionHeader("String Previews")
+                sectionHeader("String Previews (\(selectedBytes.count) bytes)")
                 
                 // ASCII
-                let asciiBytes = (0..<maxLength).map { document.buffer[index + $0] }
-                let asciiString = String(bytes: asciiBytes, encoding: .ascii) ?? "Invalid"
-                inspectorRow(title: "ASCII", value: asciiString.prefix(20).description)
+                let asciiString = selectedBytes.compactMap { byte in
+                    (byte >= 32 && byte <= 126) ? String(UnicodeScalar(byte)) : nil
+                }.joined()
+                
+                if !asciiString.isEmpty {
+                    inspectorRow(title: "ASCII", value: asciiString.prefix(50).description)
+                } else {
+                    inspectorRow(title: "ASCII", value: "(no printable characters)")
+                }
                 
                 // UTF-8
-                let utf8String = String(bytes: asciiBytes, encoding: .utf8) ?? "Invalid"
-                inspectorRow(title: "UTF-8", value: utf8String.prefix(20).description)
+                let utf8String = String(bytes: selectedBytes, encoding: .utf8) ?? "Invalid UTF-8"
+                inspectorRow(title: "UTF-8", value: utf8String.prefix(50).description)
+                
+                // Raw ASCII (with dots for non-printable)
+                let rawAscii = selectedBytes.map { byte in
+                    (byte >= 32 && byte <= 126) ? String(UnicodeScalar(byte)) : "·"
+                }.joined()
+                inspectorRow(title: "Raw ASCII", value: rawAscii.prefix(50).description)
                 
                 // Hex dump
-                let hexDump = asciiBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-                inspectorRow(title: "Hex", value: hexDump.prefix(50).description)
+                let hexDump = selectedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+                inspectorRow(title: "Hex", value: hexDump.prefix(100).description)
             }
         } else {
             Text("No selection")
