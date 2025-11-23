@@ -668,20 +668,25 @@ struct HexGridView: View {
                         }
                         
                         // Ignore control characters (0-31)
-                        if byte >= 32 {
-                            DispatchQueue.main.async {
-                                if self.isOverwriteMode {
-                                    self.performReplace(at: currentCursor, with: byte)
-                                    let nextIndex = min(currentCursor + 1, self.document.buffer.count - 1)
-                                    self.selection = [nextIndex]
-                                    self.cursorIndex = nextIndex
-                                    self.selectionAnchor = nextIndex
-                                } else {
-                                    self.performInsert(byte, at: currentCursor)
-                                }
-                            }
+                        if byte < 32 {
                             return .handled
                         }
+                        
+                        // ASCII input
+                        DispatchQueue.main.async {
+                            if self.isOverwriteMode && currentCursor < self.document.buffer.count {
+                                // Overwrite mode: replace existing byte
+                                self.performReplace(at: currentCursor, with: byte)
+                                let nextIndex = min(currentCursor + 1, self.document.buffer.count)
+                                self.selection = [nextIndex]
+                                self.cursorIndex = nextIndex
+                                self.selectionAnchor = nextIndex
+                            } else {
+                                // Insert mode: insert new byte
+                                self.performInsert(byte, at: currentCursor)
+                            }
+                        }
+                        return .handled
                     }
                 }
             }
@@ -806,7 +811,7 @@ struct HexGridView: View {
                     moveSelection(to: currentCursor - 1)
                 }
             case .right:
-                if currentCursor < self.document.buffer.count - 1 {
+                if currentCursor < self.document.buffer.count {
                     moveSelection(to: currentCursor + 1)
                 }
             case .up:
