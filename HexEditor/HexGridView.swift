@@ -36,25 +36,44 @@ struct HexGridView: View {
             VStack(spacing: 0) {
                 // Hex input mode indicator
                 if hexInputHelper.isHexInputMode {
-                    HStack {
+                    HStack(spacing: 8) {
                         Image(systemName: "number.circle.fill")
-                            .foregroundColor(.green)
-                        Text("Hex Input Mode")
-                            .font(.caption.bold())
-                            .foregroundColor(.green)
-                        if !hexInputHelper.partialHexInput.isEmpty {
-                            Text("Partial: \(hexInputHelper.partialHexInput)")
-                                .font(.caption.monospaced())
-                                .foregroundColor(.orange)
+                            .foregroundStyle(.green)
+                            .imageScale(.medium)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Hex Input Mode")
+                                .font(.caption.bold())
+                                .foregroundColor(.primary)
+                            
+                            if !hexInputHelper.partialHexInput.isEmpty {
+                                Text("Partial: \(hexInputHelper.partialHexInput)")
+                                    .font(.caption2.monospaced())
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        
                         Spacer()
-                        Text("Press ⌘G to toggle")
-                            .font(.caption)
+                        
+                        Text("⌘G to toggle")
+                            .font(.caption2)
                             .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color.secondary.opacity(0.1))
+                            )
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 6)
-                    .background(Color.green.opacity(0.1))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.green.opacity(0.1))
+                            .shadow(color: .green.opacity(0.2), radius: 2, x: 0, y: 1)
+                    )
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
                 }
                 
                 ScrollView {
@@ -169,8 +188,13 @@ struct HexGridView: View {
                             }
                     )
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 0)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                )
             }
             .focusable()
+            .focusEffectDisabled()
             .onKeyPress { press in
                 handleKeyPress(press)
             }
