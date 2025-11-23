@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var showStatistics = false
     @State private var showQuickActions = false
     @State private var isOverwriteMode = false
-    @State private var byteGrouping = 1
+    @State private var byteGrouping = 8
     @State private var hexInputMode = false
     @State private var showInspector = false
 
