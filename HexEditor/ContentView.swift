@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var document: HexDocument
@@ -25,6 +26,10 @@ struct ContentView: View {
     @State private var showFileComparison = false
     @State private var cursorIndex: Int? = nil
     @State private var selectionAnchor: Int? = nil
+    @State private var showDuplicateAlert = false
+    @State private var showFileExporter = false
+    @State private var showEditWarning = false
+    @Environment(\.openDocument) private var openDocument
 
     var body: some View {
         VStack(spacing: 0) {
@@ -129,6 +134,12 @@ struct ContentView: View {
                 .help(showInspector ? "Hide Inspector" : "Show Inspector")
             }
         }
+        .onChange(of: document.requestDuplicate) { _, newValue in
+            if newValue {
+                showDuplicateAlert = true
+                document.requestDuplicate = false
+            }
+        }
         .sheet(isPresented: $showJumpToOffset) {
             JumpToOffsetView(
                 document: document,
@@ -165,9 +176,47 @@ struct ContentView: View {
         .sheet(isPresented: $showQuickActions) {
             QuickActionsView(document: document, selection: $selection, isPresented: $showQuickActions, undoManager: undoManager)
         }
+        .confirmationDialog("Read-Only Document", isPresented: $showDuplicateAlert, titleVisibility: .visible) {
+            Button("Duplicate", role: .none) {
+                showFileExporter = true
+            }
+            Button("Edit Directly", role: .destructive) {
+                showEditWarning = true
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This document is read-only. How would you like to proceed?")
+        }
+        .alert(isPresented: $showEditWarning) {
+            Alert(
+                title: Text("Warning"),
+                message: Text("Editing this file directly may overwrite the original data. Are you sure you want to continue?"),
+                primaryButton: .destructive(Text("Yes, Edit")) {
+                    document.readOnly = false
+                },
+                secondaryButton: .cancel()
+            )
+        }
+        .fileExporter(
+            isPresented: $showFileExporter,
+            document: document,
+            contentType: .item,
+            defaultFilename: "Duplicate"
+        ) { result in
+            if case .success(let url) = result {
+                UserDefaults.standard.set(true, forKey: "makeEditable")
+                Task {
+                    do {
+                        try await openDocument(at: url)
+                    } catch {
+                        // Handle error if needed
+                    }
+                }
+            }
+        }
     }
 }
 
 #Preview {
-    ContentView(document: HexDocument())
+    ContentView(document: HexDocument(readOnly: false))
 }
