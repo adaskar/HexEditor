@@ -381,7 +381,7 @@ struct HexGridView: View {
         // Handle modifier commands first
         if press.modifiers.contains(.command) {
             switch press.key {
-            case "a":
+            case "a", "A":
                 // Select all
                 DispatchQueue.main.async {
                     self.selection = Set(0..<self.document.buffer.count)
@@ -389,7 +389,7 @@ struct HexGridView: View {
                     self.cursorIndex = self.document.buffer.count - 1
                 }
                 return .handled
-            case "x":
+            case "x", "X":
                 // Cut selection
                 copySelectionAsHex()
                 if !selection.isEmpty {
@@ -397,7 +397,7 @@ struct HexGridView: View {
                     performDelete(indices: sortedIndices)
                 }
                 return .handled
-            case "d":
+            case "d", "D":
                 // Duplicate selection
                 if !selection.isEmpty {
                     let sortedIndices = selection.sorted()
@@ -411,10 +411,14 @@ struct HexGridView: View {
                     }
                 }
                 return .handled
-            case "c":
-                copySelectionAsHex()
+            case "c", "C":
+                if press.modifiers.contains(.shift) {
+                    copySelectionAsAscii()
+                } else {
+                    copySelectionAsHex()
+                }
                 return .handled
-            case "v":
+            case "v", "V":
                 if press.modifiers.contains(.shift) {
                     pasteAsAscii()
                 } else {
@@ -424,17 +428,17 @@ struct HexGridView: View {
             case "0":
                 zeroSelection()
                 return .handled
-            case "g":
+            case "g", "G":
                 hexInputHelper.toggleMode()
                 hexInputMode = hexInputHelper.isHexInputMode
                 return .handled
-            case "b":
+            case "b", "B":
                 toggleBookmark(at: currentCursor)
                 return .handled
-            case "f":
+            case "f", "F":
                 showSearch = true
                 return .handled
-            case "z":
+            case "z", "Z":
                 // Let system handle undo
                 return .ignored
             default:
