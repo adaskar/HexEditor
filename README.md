@@ -1,6 +1,6 @@
 # HexEditor
 
-A powerful, native macOS hex editor built with SwiftUI, featuring advanced editing capabilities, multiple byte selection, and an intuitive interface inspired by professional hex editors like HxD.
+A powerful, native macOS hex editor built with SwiftUI, featuring advanced editing capabilities, multiple byte selection, and an intuitive interface inspired by professional hex editors.
 
 ## Screenshots
 
