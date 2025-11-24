@@ -12,18 +12,34 @@ A powerful, native macOS hex editor built with SwiftUI, featuring advanced editi
 ![Byte Grouping](screenshots/grouping.png)
 *Configurable byte grouping for better readability*
 
+### Inspector Panel
+![Inspector Panel](screenshots/inspector.png)
+*Advanced data type interpretation and selection info*
+
 ### Find & Jump to Offset
 ![Find Dialog](screenshots/find.png)
 *Search for hex patterns or ASCII text*
 
-![Jump to Offset](screenshots/joffset.png)
+![Jump to Offset](screenshots/jump_offset.png)
 *Quickly navigate to any offset in the file*
 
+### String Extraction
+![Strings View](screenshots/string.png)
+*Extract and browse ASCII and Unicode strings from binary files*
+
+### File Comparison
+![File Comparison](screenshots/diff.png)
+*Side-by-side file comparison with synchronized scrolling and difference highlighting*
+
+### Bitmap Visualizer
+![Bitmap View](screenshots/bitmap.png)
+*Visualize binary data as images with adjustable width and pixel formats*
+
 ### Analysis Tools
-![Checksum Calculator](screenshots/checksum.png)
+![Checksum Calculator](screenshots/checksums.png)
 *Calculate MD5, SHA-1, and SHA-256 checksums*
 
-![Statistics View](screenshots/stats.png)
+![Statistics View](screenshots/statistics.png)
 *Byte distribution and file statistics*
 
 ### Quick Actions
@@ -93,6 +109,52 @@ Optional side panel (toggle via toolbar) with three tabs:
    - Selection range (start, end, length)
    - Statistics (average, min, max byte values)
 
+### String Extraction
+
+Advanced string scanning tool with configurable options:
+
+- **Scan entire file** for ASCII and Unicode strings
+- **Configurable minimum length** - Set minimum string length (default: 4 characters)
+- **String type filtering** - Toggle between ASCII and Unicode separately
+- **Search and filter** - Search within found strings
+- **Jump to location** - Click offset to navigate to string in hex view
+- **One-click select** - Click any string to select it in the main editor
+- **Copy strings** - Export found strings to clipboard
+- **Live preview** - Shows string count, offset, length, and type
+
+### File Comparison (Diff)
+
+Professional side-by-side binary file comparison:
+
+- **Side-by-side view** - Compare two files simultaneously
+- **Synchronized scrolling** - Both files scroll together
+- **Difference highlighting** - Color-coded difference blocks:
+  - Modified bytes highlighted in red
+  - Matching regions shown in normal colors
+- **Block navigation** - Jump between difference blocks with ⌘[ and ⌘]
+- **Smart diff algorithm** - Uses optimized rolling hash and Myers algorithm
+- **Difference statistics** - Shows total blocks, bytes changed, and match percentage
+- **Show only differences** - Toggle to hide matching regions
+- **Large file support** - Efficient chunked comparison for files of any size
+
+### Bitmap Visualizer
+
+Visualize binary data as images:
+
+- **Adjustable width** - Slider from 1 to 1024 pixels
+- **Multiple pixel formats**:
+  - Grayscale (1 byte per pixel)
+  - RGB (3 bytes per pixel)
+  - RGBA (4 bytes per pixel)
+- **Zoom controls** - Scale from 50% to 1000%
+- **Live rendering** - Updates as you adjust parameters
+- **Identify patterns** - Spot visual patterns in binary data
+- **Useful for**:
+  - Detecting embedded images
+  - Analyzing file structure
+  - Finding repeating patterns
+  - Reverse engineering binary formats
+
 ### Visual Features
 
 - **Byte Grouping** - Configure grouping (1, 2, 4, 8, or 16 bytes)
@@ -140,6 +202,8 @@ Optional side panel (toggle via toolbar) with three tabs:
 - **⌘J** - Jump to offset
 - **⌘F** - Find
 - **⌘B** - Toggle bookmark
+- **⌘[** - Previous difference (in comparison mode)
+- **⌘]** - Next difference (in comparison mode)
 
 ## Installation
 
@@ -206,12 +270,23 @@ open HexEditor.xcodeproj
 - **Lazy Loading** - Renders only visible rows for performance
 - **Async State Updates** - Prevents UI blocking during operations
 
-### Performance
+### Performance Optimizations
 
-- Smooth scrolling with large files (10MB+)
-- Efficient memory usage with gap buffer
-- Lazy rendering of hex grid rows
-- Optimized selection and editing operations
+- **Smooth scrolling** with large files (10MB+)
+- **Efficient memory usage** with gap buffer
+- **Lazy rendering** of hex grid rows
+- **Optimized selection** using range-based algorithm for instant performance
+- **Chunked file comparison** for large file diffs
+- **Rolling hash algorithm** (Rabin-Karp) for fast pattern matching
+- **xxHash64** for high-speed chunk hashing
+
+### Advanced Algorithms
+
+- **Myers Diff Algorithm** - Industry-standard diff with optimizations
+- **Rolling Hash (Rabin-Karp)** - Efficient substring matching
+- **xxHash64** - Fast non-cryptographic hashing for comparisons
+- **Gap Buffer** - O(1) insertion/deletion at cursor position
+- **Range-based Selection** - O(1) selection queries vs O(n) with Sets
 
 ### File Format Support
 
@@ -224,22 +299,31 @@ open HexEditor.xcodeproj
 ```
 HexEditor/
 ├── HexEditor/
-│   ├── HexEditorApp.swift        # App entry point
-│   ├── ContentView.swift          # Main view with toolbar
-│   ├── HexGridView.swift          # Hex/ASCII grid display
-│   ├── FileInfoView.swift         # Inspector panel
-│   ├── DataBuffer.swift           # Gap buffer implementation
-│   ├── HexDocument.swift          # Document model
-│   ├── InsertDataView.swift       # Insert data dialog
-│   ├── SearchView.swift           # Find dialog
-│   ├── JumpToOffsetView.swift     # Jump dialog
-│   ├── ChecksumView.swift         # Checksum calculator
-│   ├── StatisticsView.swift       # File statistics
-│   ├── QuickActionsView.swift     # Batch operations
-│   ├── StatusBarView.swift        # Status bar
-│   ├── BookmarkManager.swift      # Bookmark management
-│   ├── HexInputHelper.swift       # Hex input mode logic
-│   └── ByteColorScheme.swift      # Color coding for bytes
+│   ├── HexEditorApp.swift              # App entry point
+│   ├── ContentView.swift                # Main view with toolbar
+│   ├── HexGridView.swift                # Hex/ASCII grid display
+│   ├── HexRowView.swift                 # Individual row rendering
+│   ├── FileInfoView.swift               # Inspector panel (legacy)
+│   ├── InspectorView.swift              # Enhanced inspector panel
+│   ├── DataBuffer.swift                 # Gap buffer implementation
+│   ├── HexDocument.swift                # Document model
+│   ├── InsertDataView.swift             # Insert data dialog
+│   ├── SearchView.swift                 # Find dialog
+│   ├── JumpToOffsetView.swift           # Jump dialog
+│   ├── ChecksumView.swift               # Checksum calculator
+│   ├── StatisticsView.swift             # File statistics
+│   ├── QuickActionsView.swift           # Batch operations
+│   ├── StatusBarView.swift              # Status bar
+│   ├── BookmarkManager.swift            # Bookmark management
+│   ├── HexInputHelper.swift             # Hex input mode logic
+│   ├── ByteColorScheme.swift            # Color coding for bytes
+│   ├── StringExtractor.swift            # String extraction engine
+│   ├── StringsView.swift                # String extraction UI
+│   ├── BitmapRenderer.swift             # Bitmap rendering engine
+│   ├── BitmapView.swift                 # Bitmap visualizer UI
+│   ├── ComparisonContentView.swift      # File comparison UI
+│   ├── ComparisonHexGridView.swift      # Side-by-side hex view
+│   └── DiffEngine.swift                 # File comparison algorithm
 └── README.md
 ```
 
@@ -261,10 +345,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [ ] Find & Replace
 - [ ] Data structure templates
-- [ ] Diff/Compare files
+- [x] Binary file comparison (Diff)
+- [x] String extraction tool
+- [x] Bitmap visualizer
 - [ ] Plugin system
 - [ ] Custom color schemes
 - [ ] Export to various formats (C array, Base64, etc.)
+- [ ] Disassembler view
+- [ ] File metadata editor
 
 ---
 
