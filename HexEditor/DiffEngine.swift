@@ -120,7 +120,7 @@ class DiffEngine {
             // Yield occasionally to keep UI responsive
             if d % 100 == 0 { await Task.yield() }
             
-            var vCopy = v
+            let vCopy = v
             trace.append(vCopy)
             
             for k in stride(from: -d, through: d, by: 2) {

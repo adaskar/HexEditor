@@ -14,16 +14,12 @@ struct ComparisonHexGridView: View {
     let bytesPerRow = 16
     let rowHeight: CGFloat = 20
     
-    var visibleRows: [RowData] {
-        if showOnlyDifferences, let diff = diffResult {
-            return createDiffOnlyRows(diff: diff)
-        } else {
-            return createAllRows()
-        }
-    }
+    // Cache for diff-only rows to avoid recalculating on every scroll
+    @State private var cachedDiffRows: [RowData] = []
+    @State private var lastDiffResultId: UUID?
     
     struct RowData: Identifiable {
-        let id: Int  // Row index for normal, block index for diff-only
+        let id: Int
         let offset: Int
         let bytes: [UInt8]
         let isDiffBlock: Bool
@@ -35,11 +31,22 @@ struct ComparisonHexGridView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(visibleRows) { rowData in
-                        if rowData.isCollapsedRegion {
-                            collapsedRegionView(rowData: rowData)
-                        } else {
-                            rowView(rowData: rowData)
+                    if showOnlyDifferences {
+                        // Diff Only Mode: Use cached rows
+                        ForEach(cachedDiffRows) { rowData in
+                            if rowData.isCollapsedRegion {
+                                collapsedRegionView(rowData: rowData)
+                            } else {
+                                rowView(rowData: rowData)
+                            }
+                        }
+                    } else {
+                        // Full Mode: Generate rows on demand
+                        let totalBytes = document.buffer.count
+                        let totalRows = (totalBytes + bytesPerRow - 1) / bytesPerRow
+                        
+                        ForEach(0..<totalRows, id: \.self) { rowIndex in
+                            rowView(for: rowIndex, totalBytes: totalBytes)
                         }
                     }
                 }
@@ -47,10 +54,23 @@ struct ComparisonHexGridView: View {
             }
             .onChange(of: scrollTarget) { oldValue, newValue in
                 if let target = newValue {
-                    let targetRow = target.offset / bytesPerRow
-                    
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        proxy.scrollTo(targetRow, anchor: .center)
+                    let targetRow: Int
+                    if showOnlyDifferences {
+                        // Find the row index in cachedDiffRows
+                        if let index = cachedDiffRows.firstIndex(where: { $0.offset <= target.offset && ($0.offset + bytesPerRow) > target.offset }) {
+                            targetRow = index // This is actually the ID/index in the list
+                            
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(cachedDiffRows[index].id, anchor: .center)
+                            }
+                        } else {
+                            return
+                        }
+                    } else {
+                        targetRow = target.offset / bytesPerRow
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(targetRow, anchor: .center)
+                        }
                     }
                     
                     // Flash highlight
@@ -62,8 +82,22 @@ struct ComparisonHexGridView: View {
                     }
                 }
             }
+            .onChange(of: diffResult?.blocks) { _, _ in
+                updateCachedDiffRows()
+            }
+            .onChange(of: showOnlyDifferences) { _, _ in
+                updateCachedDiffRows()
+            }
+            .onAppear {
+                updateCachedDiffRows()
+            }
         }
         .background(Color(NSColor.textBackgroundColor))
+    }
+    
+    private func updateCachedDiffRows() {
+        guard showOnlyDifferences, let diff = diffResult else { return }
+        cachedDiffRows = createDiffOnlyRows(diff: diff)
     }
     
     @ViewBuilder
@@ -82,6 +116,31 @@ struct ComparisonHexGridView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
         .id(rowData.id)
+    }
+    
+    private func rowView(for rowIndex: Int, totalBytes: Int) -> some View {
+        let offset = rowIndex * bytesPerRow
+        let remainingBytes = totalBytes - offset
+        let bytesToRead = min(bytesPerRow, remainingBytes)
+        
+        // Efficiently read bytes
+        // Note: GapBuffer.subscript is fast, but we could add a batch read method to GapBuffer for even better perf
+        var bytes = [UInt8]()
+        bytes.reserveCapacity(bytesToRead)
+        for i in 0..<bytesToRead {
+            bytes.append(document.buffer[offset + i])
+        }
+        
+        let rowData = RowData(
+            id: rowIndex,
+            offset: offset,
+            bytes: bytes,
+            isDiffBlock: false, // Not used in full view for layout, only for coloring
+            isCollapsedRegion: false,
+            collapsedByteCount: nil
+        )
+        
+        return rowView(rowData: rowData)
     }
     
     @ViewBuilder
@@ -158,54 +217,51 @@ struct ComparisonHexGridView: View {
             return (.primary, .clear)
         }
         
-        // Check if this byte is part of current block
-        let isCurrentBlock = diff.blocks.indices.contains(currentBlockIndex) &&
-                           diff.blocks[currentBlockIndex].range.contains(offset)
+        // Optimization: Use binary search to find the block
+        // Blocks are sorted by range.lowerBound
         
-        // Find if byte is in any diff block
-        for block in diff.blocks {
+        var foundBlock: DiffBlock? = nil
+        var blockIndex: Int? = nil
+        
+        // Binary search
+        var low = 0
+        var high = diff.blocks.count - 1
+        
+        while low <= high {
+            let mid = (low + high) / 2
+            let block = diff.blocks[mid]
+            
             if block.range.contains(offset) {
-                switch block.type {
-                case .modified:
-                    return (.white, isCurrentBlock ? Color.red.opacity(0.9) : Color.red.opacity(0.6))
-                case .onlyInFirst:
-                    if isLeftSide {
-                        return (.white, isCurrentBlock ? Color.orange.opacity(0.9) : Color.orange.opacity(0.6))
-                    }
-                case .onlyInSecond:
-                    if !isLeftSide {
-                        return (.white, isCurrentBlock ? Color.green.opacity(0.9) : Color.green.opacity(0.6))
-                    }
-                }
+                foundBlock = block
+                blockIndex = mid
+                break
+            } else if block.range.lowerBound > offset {
+                high = mid - 1
+            } else {
+                low = mid + 1
+            }
+        }
+        
+        guard let block = foundBlock, let idx = blockIndex else {
+            return (.primary, .clear)
+        }
+        
+        let isCurrentBlock = (idx == currentBlockIndex)
+        
+        switch block.type {
+        case .modified:
+            return (.white, isCurrentBlock ? Color.red.opacity(0.9) : Color.red.opacity(0.6))
+        case .onlyInFirst:
+            if isLeftSide {
+                return (.white, isCurrentBlock ? Color.orange.opacity(0.9) : Color.orange.opacity(0.6))
+            }
+        case .onlyInSecond:
+            if !isLeftSide {
+                return (.white, isCurrentBlock ? Color.green.opacity(0.9) : Color.green.opacity(0.6))
             }
         }
         
         return (.primary, .clear)
-    }
-    
-    private func createAllRows() -> [RowData] {
-        let totalBytes = document.buffer.count
-        let totalRows = (totalBytes + bytesPerRow - 1) / bytesPerRow
-        
-        return (0..<totalRows).map { rowIndex in
-            let offset = rowIndex * bytesPerRow
-            let remainingBytes = totalBytes - offset
-            let bytesToRead = min(bytesPerRow, remainingBytes)
-            
-            var bytes: [UInt8] = []
-            for i in 0..<bytesToRead {
-                bytes.append(document.buffer[offset + i])
-            }
-            
-            return RowData(
-                id: rowIndex,
-                offset: offset,
-                bytes: bytes,
-                isDiffBlock: false,
-                isCollapsedRegion: false,
-                collapsedByteCount: nil
-            )
-        }
     }
     
     private func createDiffOnlyRows(diff: EnhancedDiffResult) -> [RowData] {
@@ -228,7 +284,7 @@ struct ComparisonHexGridView: View {
         
         var currentOffset = 0
         
-        for (blockIndex, block) in diff.blocks.enumerated() {
+        for block in diff.blocks {
             // Add collapsed region for gap before this block
             if currentOffset < block.range.lowerBound {
                 let gapSize = block.range.lowerBound - currentOffset
