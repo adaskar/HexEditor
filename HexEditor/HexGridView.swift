@@ -686,49 +686,51 @@ struct HexGridView: View {
     }
     
     private func performArrowKeyMove(_ direction: ArrowDirection, withModifiers modifiers: EventModifiers) {
-        let currentCursor = self.cursorIndex ?? self.selection.max() ?? 0
-        
-        func moveSelection(to newIndex: Int) {
-            if modifiers.contains(.shift) {
-                // Extend selection
-                let anchor = self.selectionAnchor ?? currentCursor
-                self.selectionAnchor = anchor
-                self.cursorIndex = newIndex
-                
-                let range = min(anchor, newIndex)...max(anchor, newIndex)
-                self.selection = Set(range)
-            } else {
-                // Move selection
-                self.selection = [newIndex]
-                selectionAnchor = newIndex
-                self.cursorIndex = newIndex
+        DispatchQueue.main.async {
+            let currentCursor = self.cursorIndex ?? self.selection.max() ?? 0
+            
+            func moveSelection(to newIndex: Int) {
+                if modifiers.contains(.shift) {
+                    // Extend selection
+                    let anchor = self.selectionAnchor ?? currentCursor
+                    self.selectionAnchor = anchor
+                    self.cursorIndex = newIndex
+                    
+                    let range = min(anchor, newIndex)...max(anchor, newIndex)
+                    self.selection = Set(range)
+                } else {
+                    // Move selection
+                    self.selection = [newIndex]
+                    self.selectionAnchor = newIndex
+                    self.cursorIndex = newIndex
+                }
+                self.hexInputHelper.clearPartialInput()
             }
-            self.hexInputHelper.clearPartialInput()
-        }
-        
-        switch direction {
-        case .left:
-            if currentCursor > 0 {
-                moveSelection(to: currentCursor - 1)
+            
+            switch direction {
+            case .left:
+                if currentCursor > 0 {
+                    moveSelection(to: currentCursor - 1)
+                }
+            case .right:
+                if currentCursor < self.document.buffer.count {
+                    moveSelection(to: currentCursor + 1)
+                }
+            case .up:
+                if currentCursor >= self.bytesPerRow {
+                    moveSelection(to: currentCursor - self.bytesPerRow)
+                }
+            case .down:
+                if currentCursor + self.bytesPerRow < self.document.buffer.count {
+                    moveSelection(to: currentCursor + self.bytesPerRow)
+                }
             }
-        case .right:
-            if currentCursor < self.document.buffer.count {
-                moveSelection(to: currentCursor + 1)
+            
+            // Smart scroll: only scroll to keep cursor visible
+            if let scrollProxy = self.scrollProxy, let cursor = self.cursorIndex {
+                let rowIndex = cursor / self.bytesPerRow
+                scrollProxy.scrollTo(rowIndex)
             }
-        case .up:
-            if currentCursor >= self.bytesPerRow {
-                moveSelection(to: currentCursor - self.bytesPerRow)
-            }
-        case .down:
-            if currentCursor + self.bytesPerRow < self.document.buffer.count {
-                moveSelection(to: currentCursor + self.bytesPerRow)
-            }
-        }
-        
-        // Smart scroll: only scroll to keep cursor visible
-        if let scrollProxy = self.scrollProxy, let cursor = self.cursorIndex {
-            let rowIndex = cursor / self.bytesPerRow
-            scrollProxy.scrollTo(rowIndex)
         }
     }
     
