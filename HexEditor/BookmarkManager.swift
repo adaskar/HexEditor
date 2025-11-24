@@ -25,7 +25,17 @@ struct Bookmark: Identifiable, Codable, Equatable {
 }
 
 class BookmarkManager: ObservableObject {
-    @Published var bookmarks: [Bookmark] = []
+    @Published var bookmarks: [Bookmark] = [] {
+        didSet {
+            updateOffsetSet()
+        }
+    }
+
+    private var offsetSet: Set<Int> = []
+
+    private func updateOffsetSet() {
+        offsetSet = Set(bookmarks.map { $0.offset })
+    }
     
     // Add a new bookmark
     func addBookmark(offset: Int, name: String, note: String = "") {
@@ -51,7 +61,7 @@ class BookmarkManager: ObservableObject {
     
     // Check if offset has a bookmark
     func hasBookmark(at offset: Int) -> Bool {
-        return bookmarks.contains { $0.offset == offset }
+        return offsetSet.contains(offset)
     }
     
     // Update bookmark
