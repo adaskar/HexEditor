@@ -23,7 +23,9 @@ struct ContentView: View {
     @State private var showInspector = false
     @State private var showStrings = false
     @State private var showBitmap = false
-    @State private var showFileComparison = false
+    @State private var comparisonMode = false
+    @State private var comparisonDocument: HexDocument?
+    @State private var showComparisonFilePicker = false
     @State private var cursorIndex: Int? = nil
     @State private var selectionAnchor: Int? = nil
     @State private var showDuplicateAlert = false
@@ -44,38 +46,48 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HSplitView {
-                // Main hex grid
-                HexGridView(
+            if comparisonMode, let compDoc = comparisonDocument {
+                // Comparison mode view
+                ComparisonContentView(
+                    leftDocument: document,
+                    rightDocument: compDoc,
+                    isPresented: $comparisonMode
+                )
+            } else {
+                // Normal editing mode
+                HSplitView {
+                    // Main hex grid
+                    HexGridView(
+                        document: document,
+                        selection: $selection,
+                        isOverwriteMode: $isOverwriteMode,
+                        hexInputMode: $hexInputMode,
+                        byteGrouping: byteGrouping,
+                        showSearch: $showSearch,
+                        selectionAnchor: $selectionAnchor,
+                        cursorIndex: $cursorIndex
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    
+                    // Enhanced inspector panel
+                    if showInspector {
+                        FileInfoView(document: document, selection: $selection)
+                            .frame(width: 280)
+                    }
+                }
+                .frame(maxHeight: .infinity)
+                
+                Divider()
+                
+                // Status bar at bottom
+                StatusBarView(
                     document: document,
                     selection: $selection,
                     isOverwriteMode: $isOverwriteMode,
-                    hexInputMode: $hexInputMode,
-                    byteGrouping: byteGrouping,
-                    showSearch: $showSearch,
-                    selectionAnchor: $selectionAnchor,
-                    cursorIndex: $cursorIndex
+                    hexInputMode: $hexInputMode
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                // Enhanced inspector panel
-                if showInspector {
-                    FileInfoView(document: document, selection: $selection)
-                        .frame(width: 280)
-                }
+                .frame(height: 28)
             }
-            .frame(maxHeight: .infinity)
-            
-            Divider()
-            
-            // Status bar at bottom
-            StatusBarView(
-                document: document,
-                selection: $selection,
-                isOverwriteMode: $isOverwriteMode,
-                hexInputMode: $hexInputMode
-            )
-            .frame(height: 28)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .topTrailing) {
@@ -143,10 +155,11 @@ struct ContentView: View {
                 }
                 .help("Bitmap Visualizer")
 
-                Button(action: { showFileComparison = true }) {
+                Button(action: { showComparisonFilePicker = true }) {
                     Label("Compare", systemImage: "arrow.left.arrow.right.square")
                 }
                 .help("Compare with another file")
+                .disabled(comparisonMode)
 
                 Button(action: { showQuickActions = true }) {
                     Label("Quick Actions", systemImage: "wand.and.stars")
@@ -192,9 +205,6 @@ struct ContentView: View {
         .sheet(isPresented: $showBitmap) {
             BitmapView(document: document, isPresented: $showBitmap)
         }
-        .sheet(isPresented: $showFileComparison) {
-            FileComparisonView(document: document, isPresented: $showFileComparison)
-        }
         .sheet(isPresented: $showQuickActions) {
             QuickActionsView(document: document, selection: $selection, isPresented: $showQuickActions, undoManager: undoManager)
         }
@@ -235,6 +245,45 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .fileImporter(
+            isPresented: $showComparisonFilePicker,
+            allowedContentTypes: [.data],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    loadComparisonFile(url: url)
+                }
+            case .failure(let error):
+                print("Error loading comparison file: \(error.localizedDescription)")
+            }
+        }
+        .onChange(of: comparisonMode) { _, newValue in
+            if !newValue {
+                // Clean up comparison document when exiting comparison mode
+                comparisonDocument = nil
+            }
+        }
+    }
+    
+    private func loadComparisonFile(url: URL) {
+        let isSecured = url.startAccessingSecurityScopedResource()
+        defer {
+            if isSecured {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let doc = HexDocument(initialData: data)
+            doc.filename = url.lastPathComponent
+            self.comparisonDocument = doc
+            self.comparisonMode = true
+        } catch {
+            print("Failed to load comparison file from \(url): \(error)")
         }
     }
 }
