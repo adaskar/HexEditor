@@ -21,7 +21,9 @@ struct HexGridView: View {
     @FocusState private var isFocused: Bool
     
     // Arrow key support
+
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var visibleRows: Set<Int> = [] // PERFORMANCE: Track visible rows
     
     enum FocusedPane {
         case hex, ascii
@@ -128,7 +130,10 @@ struct HexGridView: View {
                                     onZeroOut: { zeroSelection() },
                                     onToggleBookmark: { index in toggleBookmark(at: index) }
                                 )
+
                                 .id(rowIndex)
+                                .onAppear { visibleRows.insert(rowIndex) }
+                                .onDisappear { visibleRows.remove(rowIndex) }
                             }
                         }
                         .background(Color.clear) // Ensure it captures gestures
@@ -205,9 +210,13 @@ struct HexGridView: View {
         }
         .onChange(of: cursorIndex) { _, newValue in
             // Scroll to cursor position when it changes externally
+
             if let cursor = newValue, let scrollProxy = scrollProxy, !isInteracting {
                 let rowIndex = cursor / bytesPerRow
-                scrollProxy.scrollTo(rowIndex)
+                // PERFORMANCE: Only scroll if row is not visible
+                if !visibleRows.contains(rowIndex) {
+                    scrollProxy.scrollTo(rowIndex)
+                }
             }
         }
         .onChange(of: selection) { _, newValue in
@@ -689,10 +698,11 @@ struct HexGridView: View {
             }
             
             // Smart scroll: only scroll to keep cursor visible
-            if let scrollProxy = self.scrollProxy, let cursor = self.cursorIndex {
-                let rowIndex = cursor / self.bytesPerRow
-                scrollProxy.scrollTo(rowIndex)
-            }
+            // PERFORMANCE: Rely on onChange(of: cursorIndex) to handle scrolling if needed
+            // But we can hint it here if we want immediate feedback, but let's trust the state change
+            // Actually, for arrow keys, we want to ensure visibility.
+            // The onChange handler will catch the cursor update and scroll if needed.
+            // So we can remove the explicit scroll here to avoid double scrolling/checking.
         }
     }
     

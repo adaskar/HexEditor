@@ -47,4 +47,11 @@ Verify that selecting a single byte at the end of a large file is instant and th
 5. Drag to select a range at the end.
 6. **Expected Result**: Selection should update smoothly without lag.
 7. Use arrow keys to move selection.
-8. **Expected Result**: View should still scroll to keep cursor visible (as `isInteracting` is false for key presses).
+### 7. Arrow Key Navigation Performance
+1. Open a very large file (e.g., > 10MB).
+2. Scroll to the very end of the file.
+3. Select a byte.
+4. Hold down the Right Arrow or Down Arrow key.
+5. **Expected Result**: Selection should move smoothly without lag.
+6. Continue holding until the cursor reaches the edge of the screen.
+7. **Expected Result**: The view should scroll automatically to keep the cursor visible.
