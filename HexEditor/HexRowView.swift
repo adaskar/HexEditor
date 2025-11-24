@@ -10,7 +10,7 @@ struct HexRowView: View {
     let bytesPerRow: Int
     let byteGrouping: Int
     @ObservedObject var document: HexDocument
-    @ObservedObject var selectionState: SelectionState
+    let selection: Set<Int>
     @ObservedObject var bookmarkManager: BookmarkManager
     
     // Configuration
@@ -57,7 +57,7 @@ struct HexRowView: View {
                     
                     if index < document.buffer.count {
                         let byte = document.buffer[index]
-                        let isSelected = selectionState.selection.contains(index)
+                        let isSelected = selection.contains(index)
                         let hasBookmark = bookmarkManager.hasBookmark(at: index)
                         
                         Text(ByteColorScheme.hexString(for: byte))
@@ -107,7 +107,7 @@ struct HexRowView: View {
                     if index < document.buffer.count {
                         let byte = document.buffer[index]
                         let char = (byte >= 32 && byte <= 126) ? String(UnicodeScalar(byte)) : "·"
-                        let isSelected = selectionState.selection.contains(index)
+                        let isSelected = selection.contains(index)
                         
                         Text(char)
                             .font(.monospaced(.body)())
@@ -136,7 +136,7 @@ struct HexRowView: View {
     private func contextMenuContent(for index: Int) -> some View {
         // Copy Hex operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onCopyHex()
@@ -147,7 +147,7 @@ struct HexRowView: View {
 
         // Copy ASCII operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onCopyAscii()
@@ -155,10 +155,10 @@ struct HexRowView: View {
             Label("Copy ASCII", systemImage: "text.quote")
         }
         .keyboardShortcut("c", modifiers: [.command, .shift])
-        
+
         // Paste Hex operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onPasteHex()
@@ -166,10 +166,10 @@ struct HexRowView: View {
             Label("Paste Hex", systemImage: "doc.on.clipboard")
         }
         .keyboardShortcut("v", modifiers: .command)
-        
+
         // Paste ASCII operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onPasteAscii()
@@ -177,7 +177,7 @@ struct HexRowView: View {
             Label("Paste ASCII", systemImage: "doc.on.clipboard")
         }
         .keyboardShortcut("v", modifiers: [.command, .shift])
-        
+
         // Insert operation
         Button(action: {
             onInsert(index)
@@ -185,22 +185,22 @@ struct HexRowView: View {
             Label("Insert...", systemImage: "plus.square")
         }
         .keyboardShortcut("i", modifiers: .command)
-        
+
         Divider()
-        
+
         // Delete operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onDelete()
         }) {
             Label("Delete", systemImage: "trash")
         }
-        
+
         // Zero out operation
         Button(action: {
-            if !selectionState.selection.contains(index) {
+            if !selection.contains(index) {
                 onSelect(index)
             }
             onZeroOut()
@@ -208,9 +208,9 @@ struct HexRowView: View {
             Label("Zero Out", systemImage: "0.circle")
         }
         .keyboardShortcut("0", modifiers: .command)
-        
+
         Divider()
-        
+
         // Bookmark operation
         Button(action: { onToggleBookmark(index) }) {
             let hasBookmark = bookmarkManager.hasBookmark(at: index)

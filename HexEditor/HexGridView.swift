@@ -98,7 +98,7 @@ struct HexGridView: View {
                                     bytesPerRow: bytesPerRow,
                                     byteGrouping: byteGrouping,
                                     document: document,
-                                    selectionState: selectionState,
+                                    selection: selection,
                                     bookmarkManager: bookmarkManager,
                                     rowHeight: rowHeight,
                                     offsetWidth: offsetWidth,
@@ -674,14 +674,14 @@ struct HexGridView: View {
     private func performArrowKeyMove(_ direction: ArrowDirection, withModifiers modifiers: EventModifiers) {
         DispatchQueue.main.async {
             let currentCursor = self.cursorIndex ?? self.selection.max() ?? 0
-            
+
             func moveSelection(to newIndex: Int) {
                 if modifiers.contains(.shift) {
                     // Extend selection
                     let anchor = self.selectionAnchor ?? currentCursor
                     self.selectionAnchor = anchor
                     self.cursorIndex = newIndex
-                    
+
                     let range = min(anchor, newIndex)...max(anchor, newIndex)
                     self.selection = Set(range)
                 } else {
@@ -692,7 +692,7 @@ struct HexGridView: View {
                 }
                 self.hexInputHelper.clearPartialInput()
             }
-            
+
             switch direction {
             case .left:
                 if currentCursor > 0 {
@@ -711,13 +711,6 @@ struct HexGridView: View {
                     moveSelection(to: currentCursor + self.bytesPerRow)
                 }
             }
-            
-            // Smart scroll: only scroll to keep cursor visible
-            // PERFORMANCE: Rely on onChange(of: cursorIndex) to handle scrolling if needed
-            // But we can hint it here if we want immediate feedback, but let's trust the state change
-            // Actually, for arrow keys, we want to ensure visibility.
-            // The onChange handler will catch the cursor update and scroll if needed.
-            // So we can remove the explicit scroll here to avoid double scrolling/checking.
         }
     }
     
