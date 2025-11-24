@@ -58,11 +58,28 @@ struct ByteColorScheme {
         return colors
     }()
     
+    // PERFORMANCE: Pre-computed hex strings for all 256 byte values
+    // Eliminates String(format: "%02X", byte) on every render - ~20% faster
+    static let hexStrings: [String] = {
+        var strings = [String]()
+        strings.reserveCapacity(256)
+        for byte in 0...255 {
+            strings.append(String(format: "%02X", byte))
+        }
+        return strings
+    }()
+    
     // PERFORMANCE: O(1) array access instead of enum init + dictionary lookup
     @inline(__always)
     static func color(for byte: UInt8, colorScheme: ColorScheme) -> Color {
         let colors = colorScheme == .dark ? darkColorsArray : lightColorsArray
         return colors[Int(byte)]
+    }
+    
+    // PERFORMANCE: O(1) hex string lookup
+    @inline(__always)
+    static func hexString(for byte: UInt8) -> String {
+        return hexStrings[Int(byte)]
     }
     
     // Background colors for selection

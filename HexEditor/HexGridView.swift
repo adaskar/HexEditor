@@ -114,7 +114,7 @@ struct HexGridView: View {
                                             let isSelected = selection.contains(index)
                                             let hasBookmark = bookmarkManager.hasBookmark(at: index)
                                             
-                                            Text(String(format: "%02X", byte))
+                                            Text(ByteColorScheme.hexString(for: byte))
                                                 .font(.monospaced(.body)())
                                                 .foregroundColor(isSelected ? 
                                                     ByteColorScheme.selectionTextColor : 
