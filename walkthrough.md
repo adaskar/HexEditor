@@ -1,37 +1,50 @@
-# Paste in Overwrite Mode Fix
+# Verification: Selection Performance Fix
 
-## Problem
-When the user was in "Overwrite Mode" and pasted data (e.g. via Cmd+V), the application would **insert** the data at the cursor position instead of **overwriting** the existing data. This was inconsistent with the expected behavior of an overwrite mode.
+## Goal
+Verify that selecting a single byte at the end of a large file is instant and that the selection logic works correctly with scrolling.
 
-## Solution
-I modified the `HexDocument` and `HexGridView` to support bulk replacement of data.
+## Changes
+- Refactored `HexGridView` to use `HexRowView` for row rendering.
+- Implemented `SelectionState` observable object to isolate selection updates from the main grid view.
+- Moved `DragGesture` to `LazyVStack` to ensure correct coordinate handling when scrolled.
+- Updated `HexRowView` to support all context menu actions.
 
-### Changes
+## Verification Steps
 
-1.  **`HexDocument.swift`**:
-    *   Added a new method `replace(bytes: [UInt8], at index: Int, undoManager: UndoManager?)`.
-    *   This method calculates how much of the pasted data can replace existing data and how much needs to be appended (if the paste extends beyond the file end).
-    *   It implements undo support by grouping the "delete inserted" and "restore replaced" operations.
+### 1. Performance Test
+1. Open a large file (e.g., > 10MB).
+2. Scroll to the very end of the file.
+3. Click on a byte.
+4. **Expected Result**: The selection should appear instantly without any lag.
+5. Use arrow keys to move the selection.
+6. **Expected Result**: Movement should be smooth.
 
-2.  **`HexGridView.swift`**:
-    *   Updated `pasteFromClipboard()` to check `isOverwriteMode`.
-    *   If `isOverwriteMode` is true, it calls the new `document.replace(bytes:...)` method.
-    *   If `isOverwriteMode` is false (Insert Mode), it continues to use `document.insert(bytes:...)`.
+### 2. Selection Correctness
+1. Scroll to the middle of the file.
+2. Click on a specific byte (e.g., at offset `0x1000`).
+3. Verify the status bar shows the correct offset.
+4. **Expected Result**: The selected byte matches the clicked location.
 
-## Verification
+### 3. Drag Selection
+1. Click and drag to select a range of bytes.
+2. **Expected Result**: The selection should update smoothly as you drag.
 
-### Manual Verification Steps
-1.  Open the HexEditor.
-2.  Toggle "Overwrite Mode" (if not already on).
-3.  Select a byte in the middle of the file.
-4.  Copy some data (e.g. "AA BB").
-5.  Paste the data.
-6.  **Expected Result**: The bytes at the cursor position should be replaced by "AA BB". The file size should not change (unless pasting at the very end extends the file).
-7.  Toggle "Insert Mode".
-8.  Paste the same data.
-9.  **Expected Result**: The bytes "AA BB" should be inserted at the cursor position, shifting subsequent bytes. The file size should increase.
+### 4. Context Menu
+1. Right-click on a byte.
+2. Verify all options are present (Copy, Paste, Insert, Delete, Zero Out, Bookmark).
+3. Test "Copy Hex" and "Paste Hex".
+4. **Expected Result**: Actions work as expected.
 
-### Code Verification
-The `replace` method logic handles edge cases:
-- **Partial Overwrite**: If pasting 5 bytes at 2 bytes before EOF, it replaces the last 2 bytes and appends the remaining 3 bytes.
-- **Undo/Redo**: The undo operation correctly restores the original bytes and removes any appended bytes.
+### 5. Hex/ASCII Sync
+1. Select a byte in the Hex pane.
+2. Verify the corresponding character is highlighted in the ASCII pane.
+3. Select a character in the ASCII pane.
+### 6. End of File Selection Performance
+1. Open a very large file (e.g., > 10MB).
+2. Scroll to the very end of the file.
+3. Click on the last byte.
+4. **Expected Result**: Selection should be instant.
+5. Drag to select a range at the end.
+6. **Expected Result**: Selection should update smoothly without lag.
+7. Use arrow keys to move selection.
+8. **Expected Result**: View should still scroll to keep cursor visible (as `isInteracting` is false for key presses).

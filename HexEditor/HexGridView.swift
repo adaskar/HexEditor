@@ -27,6 +27,8 @@ struct HexGridView: View {
         case hex, ascii
     }
     
+    @StateObject private var selectionState = SelectionState()
+    
     // Configuration
     let bytesPerRow: Int = 16
     let rowHeight: CGFloat = 20
@@ -90,119 +92,66 @@ struct HexGridView: View {
                             let totalRows = (totalBytes + bytesPerRow - 1) / bytesPerRow
                             
                             ForEach(0..<totalRows, id: \.self) { rowIndex in
-                                HStack(alignment: .center, spacing: 0) {
-                                    // Offset
-                                    Text(String(format: "%08X", rowIndex * bytesPerRow))
-                                        .font(.monospaced(.caption)())
-                                        .foregroundColor(ByteColorScheme.offsetColor)
-                                        .frame(width: offsetWidth, alignment: .leading)
-                                
-                                Spacer().frame(width: offsetSpacing)
-                                
-                                // Hex Bytes
-                                HStack(spacing: 0) {
-                                    ForEach(0..<bytesPerRow, id: \.self) { byteIndex in
-                                        let index = rowIndex * bytesPerRow + byteIndex
-                                        
-                                        // Add extra spacing for grouping
-                                        if byteIndex > 0 && byteIndex % byteGrouping == 0 {
-                                            Spacer().frame(width: groupingSpacing)
+                                HexRowView(
+                                    rowIndex: rowIndex,
+                                    bytesPerRow: bytesPerRow,
+                                    byteGrouping: byteGrouping,
+                                    document: document,
+                                    selectionState: selectionState,
+                                    bookmarkManager: bookmarkManager,
+                                    rowHeight: rowHeight,
+                                    offsetWidth: offsetWidth,
+                                    offsetSpacing: offsetSpacing,
+                                    hexCellWidth: hexCellWidth,
+                                    hexCellSpacing: hexCellSpacing,
+                                    groupingSpacing: groupingSpacing,
+                                    asciiCellWidth: asciiCellWidth,
+                                    onCopyHex: { copySelectionAsHex() },
+                                    onCopyAscii: { copySelectionAsAscii() },
+                                    onPasteHex: { pasteAsHex() },
+                                    onPasteAscii: { pasteAsAscii() },
+                                    onSelect: { index in
+                                        selection = [index]
+                                        cursorIndex = index
+                                        selectionAnchor = index
+                                    },
+                                    onInsert: { index in
+                                        insertPosition = index
+                                        showInsertDialog = true
+                                    },
+                                    onDelete: {
+                                        if !selection.isEmpty {
+                                            let sortedIndices = selection.sorted(by: >)
+                                            performDelete(indices: sortedIndices)
                                         }
-                                        
-                                        if index < totalBytes {
-                                            let byte = document.buffer[index]
-                                            let isSelected = selection.contains(index)
-                                            let hasBookmark = bookmarkManager.hasBookmark(at: index)
-                                            
-                                            Text(ByteColorScheme.hexString(for: byte))
-                                                .font(.monospaced(.body)())
-                                                .foregroundColor(isSelected ? 
-                                                    ByteColorScheme.selectionTextColor : 
-                                                    ByteColorScheme.color(for: byte, colorScheme: colorScheme))
-                                                .frame(width: hexCellWidth, height: rowHeight, alignment: .center)
-                                                .background(
-                                                    ZStack {
-                                                        if isSelected {
-                                                            RoundedRectangle(cornerRadius: 4)
-                                                                .fill(ByteColorScheme.selectionColor)
-                                                        }
-                                                        if hasBookmark {
-                                                            RoundedRectangle(cornerRadius: 4)
-                                                                .stroke(Color.yellow, lineWidth: 2)
-                                                        }
-                                                    }
-                                                 )
-                                                 .contentShape(Rectangle())
-                                                 .contextMenu {
-                                                     contextMenuContent(for: index)
-                                                 }
-                                        } else {
-                                            Text("  ")
-                                                .font(.monospaced(.body)())
-                                                .frame(width: hexCellWidth, height: rowHeight)
-                                        }
-                                        
-                                        if byteIndex < bytesPerRow - 1 {
-                                            Spacer().frame(width: hexCellSpacing)
-                                        }
-                                    }
-                                }
-                                
-                                Spacer().frame(width: 10)
-                                
-                                Divider()
-                                    .frame(height: 16)
-                                    .padding(.horizontal, 4)
-                                
-                                // ASCII
-                                HStack(spacing: 0) {
-                                    ForEach(0..<bytesPerRow, id: \.self) { byteIndex in
-                                        let index = rowIndex * bytesPerRow + byteIndex
-                                        if index < totalBytes {
-                                            let byte = document.buffer[index]
-                                            let char = (byte >= 32 && byte <= 126) ? String(UnicodeScalar(byte)) : "·"
-                                            let isSelected = selection.contains(index)
-                                            
-                                            Text(char)
-                                                .font(.monospaced(.body)())
-                                                .foregroundColor(isSelected ? 
-                                                    ByteColorScheme.selectionTextColor : 
-                                                    ByteColorScheme.color(for: byte, colorScheme: colorScheme))
-                                                .frame(width: asciiCellWidth, height: rowHeight, alignment: .center)
-                                                .background(isSelected ? ByteColorScheme.selectionColor : Color.clear)
-                                                .contentShape(Rectangle())
-                                                .contextMenu {
-                                                    contextMenuContent(for: index)
-                                                }
-                                        } else {
-                                            Text(" ")
-                                                .font(.monospaced(.body)())
-                                                .frame(width: asciiCellWidth, height: rowHeight)
-                                        }
-                                    }
-                                }
-                                Spacer()
+                                    },
+                                    onZeroOut: { zeroSelection() },
+                                    onToggleBookmark: { index in toggleBookmark(at: index) }
+                                )
+                                .id(rowIndex)
                             }
-                            .frame(height: rowHeight)
-                            .id(rowIndex)
                         }
+                        .background(Color.clear) // Ensure it captures gestures
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                                .onChanged { value in
+                                    handleDragGesture(value: value)
+                                }
+                                .onEnded { _ in
+                                    finalizeDrag()
+                                }
+                        )
                     }
                     .padding(16)
-                    .gesture(
-                        DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                            .onChanged { value in
-                                handleDragGesture(value: value)
-                            }
-                            .onEnded { _ in
-                                finalizeDrag()
-                            }
-                    )
                     .onAppear {
                         self.scrollProxy = proxy
                         self.isFocused = true
-                    }
+                        // Initialize selection state
+                        self.selectionState.selection = self.selection
                     }
                 }
+
                 .background(
                     RoundedRectangle(cornerRadius: 0)
                         .fill(Color(nsColor: .textBackgroundColor))
@@ -256,9 +205,15 @@ struct HexGridView: View {
         }
         .onChange(of: cursorIndex) { _, newValue in
             // Scroll to cursor position when it changes externally
-            if let cursor = newValue, let scrollProxy = scrollProxy {
+            if let cursor = newValue, let scrollProxy = scrollProxy, !isInteracting {
                 let rowIndex = cursor / bytesPerRow
                 scrollProxy.scrollTo(rowIndex)
+            }
+        }
+        .onChange(of: selection) { _, newValue in
+            // Sync selection to internal state
+            if selectionState.selection != newValue {
+                selectionState.selection = newValue
             }
         }
     }
@@ -266,16 +221,18 @@ struct HexGridView: View {
     
     // Track if we're actively dragging
     @State private var isDragging = false
+    @State private var isInteracting = false // PERFORMANCE: Track interaction to skip auto-scroll
     @State private var lastDragIndex: Int?  // PERFORMANCE: Track last index to avoid redundant updates
+
     
     private func handleDragGesture(value: DragGesture.Value) {
         let location = value.location
         
         // Calculate index from location
-        // We need to account for padding
-        let padding: CGFloat = 16
-        let relativeX = location.x - padding
-        let relativeY = location.y - padding
+        // Since gesture is on LazyVStack, location is local to content
+        
+        let relativeX = location.x
+        let relativeY = location.y
         
         guard relativeY >= 0 else { return }
         
@@ -349,6 +306,7 @@ struct HexGridView: View {
                 if !isDragging {
                     // Start of drag
                     isDragging = true
+                    isInteracting = true
                     dragStart = index
                     selectionAnchor = index
                     cursorIndex = index
@@ -372,6 +330,7 @@ struct HexGridView: View {
         // The selection is already set, so just clean up
         dragStart = nil
         isDragging = false
+        isInteracting = false
         lastDragIndex = nil  // PERFORMANCE: Clear cached index
     }
     
@@ -752,108 +711,7 @@ struct HexGridView: View {
             self.selectionAnchor = newCursor
         }
     }
-
-    @ViewBuilder
-    private func contextMenuContent(for index: Int) -> some View {
-        // Copy Hex operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            copySelectionAsHex()
-        }) {
-            Label("Copy Hex", systemImage: "doc.on.doc")
-        }
-        .keyboardShortcut("c", modifiers: .command)
-
-        // Copy ASCII operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            copySelectionAsAscii()
-        }) {
-            Label("Copy ASCII", systemImage: "text.quote")
-        }
-        .keyboardShortcut("c", modifiers: [.command, .shift])
-        
-        // Paste Hex operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            pasteAsHex()
-        }) {
-            Label("Paste Hex", systemImage: "doc.on.clipboard")
-        }
-        .keyboardShortcut("v", modifiers: .command)
-        
-        // Paste ASCII operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            pasteAsAscii()
-        }) {
-            Label("Paste ASCII", systemImage: "doc.on.clipboard")
-        }
-        .keyboardShortcut("v", modifiers: [.command, .shift])
-        
-        // Insert operation
-        Button(action: {
-            insertPosition = index
-            showInsertDialog = true
-        }) {
-            Label("Insert...", systemImage: "plus.square")
-        }
-        .keyboardShortcut("i", modifiers: .command)
-        
-        Divider()
-        
-        // Delete operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            if !selection.isEmpty {
-                let sortedIndices = selection.sorted(by: >)
-                performDelete(indices: sortedIndices)
-            }
-        }) {
-            Label("Delete", systemImage: "trash")
-        }
-        
-        // Zero out operation
-        Button(action: {
-            if !selection.contains(index) {
-                selection = [index]
-                cursorIndex = index
-                selectionAnchor = index
-            }
-            zeroSelection()
-        }) {
-            Label("Zero Out", systemImage: "0.circle")
-        }
-        .keyboardShortcut("0", modifiers: .command)
-        
-        Divider()
-        
-        // Bookmark operation
-        Button(action: { toggleBookmark(at: index) }) {
-            let hasBookmark = bookmarkManager.hasBookmark(at: index)
-            Label(hasBookmark ? "Remove Bookmark" : "Add Bookmark", 
-                  systemImage: hasBookmark ? "bookmark.slash" : "bookmark")
-        }
-        .keyboardShortcut("b", modifiers: .command)
-    }
 }
+
+
+
