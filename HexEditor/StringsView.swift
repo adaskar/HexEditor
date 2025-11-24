@@ -111,6 +111,7 @@ struct StringsView: View {
                             .foregroundColor(.secondary)
                     }
                     .background(selectedString == str ? Color.accentColor.opacity(0.3) : Color.clear)
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         selectedString = str
                         selectString(str)
