@@ -266,6 +266,7 @@ struct HexGridView: View {
     
     // Track if we're actively dragging
     @State private var isDragging = false
+    @State private var lastDragIndex: Int?  // PERFORMANCE: Track last index to avoid redundant updates
     
     private func handleDragGesture(value: DragGesture.Value) {
         let location = value.location
@@ -339,6 +340,12 @@ struct HexGridView: View {
             let index = rowIndex * bytesPerRow + colIndex
             if index < document.buffer.count {
                 
+                // PERFORMANCE: Only update if index changed
+                if lastDragIndex == index {
+                    return
+                }
+                lastDragIndex = index
+                
                 if !isDragging {
                     // Start of drag
                     isDragging = true
@@ -349,12 +356,11 @@ struct HexGridView: View {
                     focusedPane = isAscii ? .ascii : .hex
                     hexInputHelper.clearPartialInput()
                 } else {
-                    // Continue drag
+                    // Continue drag - OPTIMIZED: Only update when index changes
                     if let start = dragStart {
                         let range = min(start, index)...max(start, index)
                         selection = Set(range)
                         cursorIndex = index
-                        hexInputHelper.clearPartialInput()
                     }
                 }
             }
@@ -366,6 +372,7 @@ struct HexGridView: View {
         // The selection is already set, so just clean up
         dragStart = nil
         isDragging = false
+        lastDragIndex = nil  // PERFORMANCE: Clear cached index
     }
     
     
