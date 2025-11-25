@@ -31,6 +31,7 @@ struct ContentView: View {
     @State private var showDuplicateAlert = false
     @State private var showFileExporter = false
     @State private var showEditWarning = false
+    @State private var useMetalRenderer = false // Toggle for Optimized Renderer
     @Environment(\.openDocument) private var openDocument
 
     private var duplicateFilename: String {
@@ -57,17 +58,31 @@ struct ContentView: View {
                 // Normal editing mode
                 HSplitView {
                     // Main hex grid
-                    HexGridView(
-                        document: document,
-                        selection: $selection,
-                        isOverwriteMode: $isOverwriteMode,
-                        hexInputMode: $hexInputMode,
-                        byteGrouping: byteGrouping,
-                        showSearch: $showSearch,
-                        selectionAnchor: $selectionAnchor,
-                        cursorIndex: $cursorIndex
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    if useMetalRenderer {
+                        OptimizedHexGridView(
+                            document: document,
+                            selection: $selection,
+                            isOverwriteMode: $isOverwriteMode,
+                            hexInputMode: $hexInputMode,
+                            byteGrouping: byteGrouping,
+                            showSearch: $showSearch,
+                            selectionAnchor: $selectionAnchor,
+                            cursorIndex: $cursorIndex
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        HexGridView(
+                            document: document,
+                            selection: $selection,
+                            isOverwriteMode: $isOverwriteMode,
+                            hexInputMode: $hexInputMode,
+                            byteGrouping: byteGrouping,
+                            showSearch: $showSearch,
+                            selectionAnchor: $selectionAnchor,
+                            cursorIndex: $cursorIndex
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                     
                     // Enhanced inspector panel
                     if showInspector {
@@ -92,12 +107,14 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .topTrailing) {
             if showSearch {
-                SearchView(
-                    document: document,
-                    selection: $selection,
-                    isPresented: $showSearch,
-                    cursorIndex: $cursorIndex
-                )
+                VStack(alignment: .trailing, spacing: 10) {
+                    SearchView(
+                        document: document,
+                        selection: $selection,
+                        isPresented: $showSearch,
+                        cursorIndex: $cursorIndex
+                    )
+                }
                 .padding(.top, 20)
                 .padding(.trailing, 20)
                 .transition(.opacity)
@@ -170,6 +187,10 @@ struct ContentView: View {
                     Label("Inspector", systemImage: showInspector ? "sidebar.right" : "sidebar.right")
                 }
                 .help(showInspector ? "Hide Inspector" : "Show Inspector")
+                
+                Toggle("Optimized", isOn: $useMetalRenderer)
+                    .toggleStyle(.switch)
+                    .help("Use Optimized NSTextView Renderer")
             }
         }
         .onChange(of: document.requestDuplicate) { _, newValue in
