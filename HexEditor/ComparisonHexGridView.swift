@@ -63,25 +63,24 @@ struct ComparisonHexGridView: NSViewRepresentable {
     private func scrollToOffset(_ scrollView: NSScrollView, offset: Int) {
         guard let textView = scrollView.documentView as? ComparisonHexTextView else { return }
         
-        // Calculate Y position
-        // This is tricky with "Show Only Differences" because offsets are not linear
-        // We need a method on textView to get Y for offset
-        
-        // For now, let's assume linear if not filtering, or approximate?
-        // Actually, ComparisonHexTextView needs a method `yForOffset(_:)`
-        // But we can't easily add it to the NSView from here without casting and ensuring it exists.
-        // Let's add `yForOffset` to ComparisonHexTextView in a separate step or just calculate here if possible.
-        // But `visibleRows` is private.
-        
-        // Better approach: Pass the scroll request to the view or coordinator?
-        // Let's implement `scrollToOffset` on `ComparisonHexTextView`?
-        // No, `NSView` doesn't have that.
-        // Let's just calculate linear for now as a fallback, or better:
-        // Add a public method to `ComparisonHexTextView` to get rect for offset.
-        
         if let y = textView.yPosition(for: offset) {
-            let rect = NSRect(x: 0, y: y, width: scrollView.bounds.width, height: 20)
-            scrollView.contentView.scrollToVisible(rect)
+            // Calculate target origin to center the row
+            let scrollViewHeight = scrollView.bounds.height
+            let targetY = max(0, y - (scrollViewHeight / 2) + 10)
+            
+            let newOrigin = NSPoint(x: 0, y: targetY)
+            
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                scrollView.contentView.animator().setBoundsOrigin(newOrigin)
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+            } completionHandler: {
+                // Ensure highlight is triggered on main thread with slight delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    textView.flashHighlight(at: offset)
+                }
+            }
         }
     }
     

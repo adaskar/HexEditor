@@ -203,33 +203,16 @@ struct ComparisonContentView: View {
     private func navigateToNextDiff() {
         guard let diff = diffResult, !diff.blocks.isEmpty else { return }
         
-        // Find the first block that starts AFTER the current visible offset
-        // We add a small buffer (e.g. 16 bytes) to avoid jumping to the same block if we are just slightly before it
-        let searchOffset = currentVisibleOffset + 16
-        
-        if let nextIndex = diff.blocks.firstIndex(where: { $0.range.lowerBound > searchOffset }) {
-            currentBlockIndex = nextIndex
-        } else {
-            // Wrap around to start
-            currentBlockIndex = 0
-        }
-        
+        // Simple increment with wrap-around
+        currentBlockIndex = (currentBlockIndex + 1) % diff.blocks.count
         jumpToBlock(at: currentBlockIndex)
     }
     
     private func navigateToPreviousDiff() {
         guard let diff = diffResult, !diff.blocks.isEmpty else { return }
         
-        // Find the last block that starts BEFORE the current visible offset
-        let searchOffset = currentVisibleOffset
-        
-        if let prevIndex = diff.blocks.lastIndex(where: { $0.range.lowerBound < searchOffset }) {
-            currentBlockIndex = prevIndex
-        } else {
-            // Wrap around to end
-            currentBlockIndex = diff.blocks.count - 1
-        }
-        
+        // Simple decrement with wrap-around
+        currentBlockIndex = (currentBlockIndex - 1 + diff.blocks.count) % diff.blocks.count
         jumpToBlock(at: currentBlockIndex)
     }
     
@@ -238,7 +221,5 @@ struct ComparisonContentView: View {
         
         let block = diff.blocks[index]
         scrollTarget = ScrollTarget(offset: block.range.lowerBound)
-        // Immediately update currentVisibleOffset so next navigation works correctly
-        currentVisibleOffset = block.range.lowerBound
     }
 }
