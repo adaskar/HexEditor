@@ -20,7 +20,7 @@ struct ContentView: View {
     @State private var isOverwriteMode = false
     @State private var byteGrouping = 8
     @State private var hexInputMode = false
-    @State private var showInspector = false
+    @State private var showInspector = true
     @State private var showStrings = false
     @State private var showBitmap = false
     @State private var comparisonMode = false
