@@ -33,7 +33,9 @@ struct ContentView: View {
     @State private var showEditWarning = false
     @State private var useMetalRenderer = false // Toggle for Optimized Renderer
     @Environment(\.openDocument) private var openDocument
-
+    
+    @StateObject private var bookmarkManager = BookmarkManager()
+    
     private var duplicateFilename: String {
         let originalName = document.filename ?? "Untitled"
         if let dotIndex = originalName.lastIndex(of: ".") {
@@ -67,7 +69,8 @@ struct ContentView: View {
                             byteGrouping: byteGrouping,
                             showSearch: $showSearch,
                             selectionAnchor: $selectionAnchor,
-                            cursorIndex: $cursorIndex
+                            cursorIndex: $cursorIndex,
+                            bookmarkManager: bookmarkManager
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
@@ -78,6 +81,7 @@ struct ContentView: View {
                             hexInputMode: $hexInputMode,
                             byteGrouping: byteGrouping,
                             showSearch: $showSearch,
+                            bookmarkManager: bookmarkManager,
                             selectionAnchor: $selectionAnchor,
                             cursorIndex: $cursorIndex
                         )

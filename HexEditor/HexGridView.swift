@@ -11,7 +11,7 @@ struct HexGridView: View {
     @Environment(\.colorScheme) var colorScheme
     
     @StateObject private var hexInputHelper = HexInputHelper()
-    @StateObject private var bookmarkManager = BookmarkManager()
+    @ObservedObject var bookmarkManager: BookmarkManager
     @State private var dragStart: Int?
     @Binding var selectionAnchor: Int?
     @Binding var cursorIndex: Int?

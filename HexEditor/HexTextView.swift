@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import Combine
 
 class HexTextView: NSView {
     // Data Source
@@ -9,6 +10,15 @@ class HexTextView: NSView {
             needsDisplay = true
         }
     }
+    
+    weak var bookmarkManager: BookmarkManager? {
+        didSet {
+            setupBookmarkObserver()
+            needsDisplay = true
+        }
+    }
+    
+    private var cancellables = Set<AnyCancellable>()
     
     // Configuration
     var byteGrouping: Int = 8 {
@@ -51,6 +61,15 @@ class HexTextView: NSView {
     // Color Cache
     private var colorCache: [NSColor] = []
     private var lastColorScheme: NSAppearance?
+    
+    private func setupBookmarkObserver() {
+        cancellables.removeAll()
+        bookmarkManager?.$bookmarks
+            .sink { [weak self] _ in
+                self?.needsDisplay = true
+            }
+            .store(in: &cancellables)
+    }
     
     // MARK: - Initialization
     
@@ -185,6 +204,14 @@ class HexTextView: NSView {
                     // Also highlight ASCII cursor
                     let asciiRect = NSRect(x: asciiX, y: y, width: charWidth, height: lineHeight)
                     context.stroke(asciiRect)
+                }
+                
+                // Bookmark Highlight
+                if let bm = bookmarkManager, bm.hasBookmark(at: currentByteIndex) {
+                    context.setStrokeColor(NSColor.systemYellow.cgColor)
+                    context.setLineWidth(2.0)
+                    let hexRect = NSRect(x: hexX, y: y, width: hexByteWidth - charWidth/2, height: lineHeight)
+                    context.stroke(hexRect)
                 }
                 
                 // Draw Hex
@@ -344,7 +371,11 @@ class HexTextView: NSView {
                         copySelection()
                     }
                 } else if char == "v" {
-                    // paste() // TODO: Implement paste
+                    if event.modifierFlags.contains(.shift) {
+                        pasteAsAscii()
+                    } else {
+                        pasteAsHex()
+                    }
                 } else if char == "a" {
                     // Select All
                     currentSelection = Set(0..<document.buffer.count)
@@ -353,6 +384,12 @@ class HexTextView: NSView {
                     onSelectionChanged?(currentSelection)
                     onCursorChanged?(currentCursor)
                     needsDisplay = true
+                } else if char == "b" {
+                    if let cursor = currentCursor {
+                        toggleBookmark(at: cursor)
+                    }
+                } else if char == "0" {
+                    zeroOutSelection()
                 }
             } else if !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                 // Typing
@@ -496,6 +533,22 @@ class HexTextView: NSView {
         
         menu.addItem(NSMenuItem.separator())
         
+        menu.addItem(withTitle: "Paste Hex", action: #selector(pasteHexMenu), keyEquivalent: "v")
+        
+        let pasteAsciiItem = NSMenuItem(title: "Paste ASCII", action: #selector(pasteAsciiMenu), keyEquivalent: "v")
+        pasteAsciiItem.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(pasteAsciiItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        menu.addItem(withTitle: "Zero Out", action: #selector(zeroOutMenu), keyEquivalent: "0")
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        menu.addItem(withTitle: "Toggle Bookmark", action: #selector(toggleBookmarkMenu), keyEquivalent: "b")
+        
+        menu.addItem(NSMenuItem.separator())
+        
         menu.addItem(withTitle: "Select All", action: #selector(selectAll(_:)), keyEquivalent: "a")
         
         return menu
@@ -507,5 +560,93 @@ class HexTextView: NSView {
     
     @objc private func copyAsciiSelectionMenu() {
         copyAsciiSelection()
+    }
+    
+    @objc private func pasteHexMenu() {
+        pasteAsHex()
+    }
+    
+    @objc private func pasteAsciiMenu() {
+        pasteAsAscii()
+    }
+    
+    @objc private func zeroOutMenu() {
+        zeroOutSelection()
+    }
+    
+    @objc private func toggleBookmarkMenu() {
+        guard let cursor = currentCursor else { return }
+        toggleBookmark(at: cursor)
+    }
+    
+    private func pasteAsHex() {
+        let pasteboard = NSPasteboard.general
+        guard let string = pasteboard.string(forType: .string) else { return }
+        
+        // Filter for valid hex characters
+        let hexChars = string.uppercased().filter { "0123456789ABCDEF".contains($0) }
+        
+        var bytes: [UInt8] = []
+        var currentIndex = hexChars.startIndex
+        
+        while currentIndex < hexChars.endIndex {
+            let nextIndex = hexChars.index(after: currentIndex)
+            if nextIndex < hexChars.endIndex {
+                let pair = hexChars[currentIndex...nextIndex]
+                if let byte = UInt8(pair, radix: 16) {
+                    bytes.append(byte)
+                }
+                currentIndex = hexChars.index(after: nextIndex)
+            } else {
+                break
+            }
+        }
+        
+        pasteBytes(bytes)
+    }
+    
+    private func pasteAsAscii() {
+        let pasteboard = NSPasteboard.general
+        guard let string = pasteboard.string(forType: .string) else { return }
+        if let data = string.data(using: .utf8) {
+            pasteBytes([UInt8](data))
+        }
+    }
+    
+    private func pasteBytes(_ bytes: [UInt8]) {
+        guard let document = hexDocument, let cursor = currentCursor else { return }
+        guard !bytes.isEmpty else { return }
+        
+        if isOverwriteMode {
+            document.replace(bytes: bytes, at: cursor, undoManager: undoManager)
+        } else {
+            document.insert(bytes: bytes, at: cursor, undoManager: undoManager)
+        }
+        
+        let newCursor = cursor + bytes.count
+        currentCursor = newCursor
+        currentSelection = [newCursor]
+        currentAnchor = newCursor
+        onSelectionChanged?(currentSelection)
+        onCursorChanged?(currentCursor)
+        scrollToCursor()
+        needsDisplay = true
+    }
+    
+    private func zeroOutSelection() {
+        guard let document = hexDocument else { return }
+        for index in currentSelection {
+            document.replace(at: index, with: 0, undoManager: undoManager)
+        }
+        needsDisplay = true
+    }
+    
+    private func toggleBookmark(at index: Int) {
+        guard let bm = bookmarkManager else { return }
+        if bm.hasBookmark(at: index) {
+            bm.removeBookmark(at: index)
+        } else {
+            bm.addBookmark(offset: index, name: "Bookmark at 0x\(String(format: "%X", index))")
+        }
     }
 }

@@ -10,6 +10,7 @@ struct OptimizedHexGridView: NSViewRepresentable {
     @Binding var showSearch: Bool
     @Binding var selectionAnchor: Int?
     @Binding var cursorIndex: Int?
+    @ObservedObject var bookmarkManager: BookmarkManager
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -25,6 +26,7 @@ struct OptimizedHexGridView: NSViewRepresentable {
         
         let textView = HexTextView()
         textView.hexDocument = document
+        textView.bookmarkManager = bookmarkManager
         textView.byteGrouping = byteGrouping
         textView.isHexInputMode = hexInputMode
         textView.isOverwriteMode = isOverwriteMode
@@ -55,6 +57,7 @@ struct OptimizedHexGridView: NSViewRepresentable {
         // Update document reference
         if textView.hexDocument !== document {
             textView.hexDocument = document
+            textView.bookmarkManager = bookmarkManager
             textView.regenerateContent()
             context.coordinator.setupDocumentObserver()
         }
