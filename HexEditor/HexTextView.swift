@@ -139,8 +139,8 @@ class HexTextView: NSView {
         context.fill(dirtyRect)
         
         let buffer = document.buffer
-        let firstLine = Int(dirtyRect.minY / lineHeight)
-        let lastLine = Int(dirtyRect.maxY / lineHeight)
+        let firstLine = max(0, Int(dirtyRect.minY / lineHeight))
+        let lastLine = max(firstLine, Int(dirtyRect.maxY / lineHeight))
         
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,

@@ -31,7 +31,7 @@ struct ContentView: View {
     @State private var showDuplicateAlert = false
     @State private var showFileExporter = false
     @State private var showEditWarning = false
-    @State private var useMetalRenderer = false // Toggle for Optimized Renderer
+
     @Environment(\.openDocument) private var openDocument
     
     @StateObject private var bookmarkManager = BookmarkManager()
@@ -60,33 +60,19 @@ struct ContentView: View {
                 // Normal editing mode
                 HSplitView {
                     // Main hex grid
-                    if useMetalRenderer {
-                        OptimizedHexGridView(
-                            document: document,
-                            selection: $selection,
-                            isOverwriteMode: $isOverwriteMode,
-                            hexInputMode: $hexInputMode,
-                            byteGrouping: byteGrouping,
-                            showSearch: $showSearch,
-                            selectionAnchor: $selectionAnchor,
-                            cursorIndex: $cursorIndex,
-                            bookmarkManager: bookmarkManager
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        HexGridView(
-                            document: document,
-                            selection: $selection,
-                            isOverwriteMode: $isOverwriteMode,
-                            hexInputMode: $hexInputMode,
-                            byteGrouping: byteGrouping,
-                            showSearch: $showSearch,
-                            bookmarkManager: bookmarkManager,
-                            selectionAnchor: $selectionAnchor,
-                            cursorIndex: $cursorIndex
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
+                    // Main hex grid
+                    HexGridView(
+                        document: document,
+                        selection: $selection,
+                        isOverwriteMode: $isOverwriteMode,
+                        hexInputMode: $hexInputMode,
+                        byteGrouping: byteGrouping,
+                        showSearch: $showSearch,
+                        selectionAnchor: $selectionAnchor,
+                        cursorIndex: $cursorIndex,
+                        bookmarkManager: bookmarkManager
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     // Enhanced inspector panel
                     if showInspector {
@@ -191,10 +177,6 @@ struct ContentView: View {
                     Label("Inspector", systemImage: showInspector ? "sidebar.right" : "sidebar.right")
                 }
                 .help(showInspector ? "Hide Inspector" : "Show Inspector")
-                
-                Toggle("Optimized", isOn: $useMetalRenderer)
-                    .toggleStyle(.switch)
-                    .help("Use Optimized NSTextView Renderer")
             }
         }
         .onChange(of: document.requestDuplicate) { _, newValue in
