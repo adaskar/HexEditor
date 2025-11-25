@@ -180,25 +180,43 @@ class HexTextView: NSView {
                 
                 // Selection Highlight
                 if currentSelection.contains(currentByteIndex) {
-                    // Make selection more noticeable
-                    NSColor.selectedTextBackgroundColor.withAlphaComponent(0.5).setFill()
-                    let hexRect = NSRect(x: hexX, y: y, width: hexByteWidth, height: lineHeight)
-                    context.fill(hexRect)
+                    // Make selection more noticeable but elegant
+                    NSColor.selectedTextBackgroundColor.withAlphaComponent(0.4).setFill()
+                    
+                    // Hex Selection Logic
+                    var width = (2.0 * charWidth) + 4.0 // Default tight width for "FF"
+                    let x = hexX - 2.0 // Slight padding left
+                    
+                    // Check if right neighbor is selected to connect them
+                    let isRightSelected = currentSelection.contains(currentByteIndex + 1) && (i < bytesPerRow - 1)
+                    if isRightSelected {
+                        // Calculate distance to next byte to span the gap
+                        let nextGroupCount = (i + 1) / byteGrouping
+                        let currentGroupCount = i / byteGrouping
+                        let dist = hexByteWidth + CGFloat(nextGroupCount - currentGroupCount) * charWidth
+                        width = dist
+                    }
+                    
+                    let hexRect = NSRect(x: x, y: y, width: width, height: lineHeight)
+                    // Use a rounded rect for a softer look, but only if it's a single/end block?
+                    // For simplicity and solid merging, standard fill is best.
+                    // To make it look "pill-like" for the whole run is complex without path merging.
+                    // Let's stick to standard fill but with better geometry.
+                    let path = NSBezierPath(roundedRect: hexRect, xRadius: 2, yRadius: 2)
+                    path.fill()
+                    
+                    // ASCII Selection
+                    // ASCII chars are contiguous, so standard rect is fine.
                     let asciiRect = NSRect(x: asciiX, y: y, width: charWidth, height: lineHeight)
                     context.fill(asciiRect)
-                    
-                    // Add a border for even better visibility
-                    context.setStrokeColor(NSColor.selectedTextBackgroundColor.cgColor)
-                    context.setLineWidth(1.0)
-                    context.stroke(hexRect)
-                    context.stroke(asciiRect)
                 }
                 
                 // Cursor Highlight
                 if currentCursor == currentByteIndex {
                     context.setStrokeColor(NSColor.textColor.cgColor)
                     context.setLineWidth(1.0)
-                    let hexRect = NSRect(x: hexX, y: y, width: hexByteWidth - charWidth/2, height: lineHeight)
+                    // Adjust cursor rect to match new selection geometry
+                    let hexRect = NSRect(x: hexX - 2.0, y: y, width: (2.0 * charWidth) + 4.0, height: lineHeight)
                     context.stroke(hexRect)
                     
                     // Also highlight ASCII cursor
@@ -210,7 +228,7 @@ class HexTextView: NSView {
                 if let bm = bookmarkManager, bm.hasBookmark(at: currentByteIndex) {
                     context.setStrokeColor(NSColor.systemYellow.cgColor)
                     context.setLineWidth(2.0)
-                    let hexRect = NSRect(x: hexX, y: y, width: hexByteWidth - charWidth/2, height: lineHeight)
+                    let hexRect = NSRect(x: hexX - 2.0, y: y, width: (2.0 * charWidth) + 4.0, height: lineHeight)
                     context.stroke(hexRect)
                 }
                 
