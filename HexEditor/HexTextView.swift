@@ -6,6 +6,11 @@ class HexTextView: NSView {
     // Data Source
     weak var hexDocument: HexDocument? {
         didSet {
+            if let doc = hexDocument, doc.buffer.count == 0, currentCursor == nil {
+                currentCursor = 0
+                currentSelection = [0]
+                currentAnchor = 0
+            }
             updateIntrinsicContentSize()
             needsDisplay = true
         }
@@ -34,11 +39,13 @@ class HexTextView: NSView {
     // State
     var currentSelection: Set<Int> = [] {
         didSet {
+            pendingHexNibble = nil
             needsDisplay = true
         }
     }
     var currentCursor: Int? {
         didSet {
+            pendingHexNibble = nil
             needsDisplay = true
         }
     }
@@ -62,6 +69,9 @@ class HexTextView: NSView {
     // Color Cache
     private var colorCache: [NSColor] = []
     private var lastColorScheme: NSAppearance?
+    
+    // Input State
+    private var pendingHexNibble: UInt8?
     
     private func setupBookmarkObserver() {
         cancellables.removeAll()
@@ -188,7 +198,8 @@ class HexTextView: NSView {
         // Draw visible lines
         for line in firstLine...lastLine {
             let byteIndex = line * bytesPerRow
-            if byteIndex >= buffer.count { break }
+            // Break if beyond buffer, but allow drawing line 0 for empty file (to show address 00000000)
+            if byteIndex >= buffer.count && (buffer.count > 0 || line > 0) { break }
             
             let y = CGFloat(line) * lineHeight + verticalPadding
             
@@ -289,7 +300,8 @@ class HexTextView: NSView {
         }
         
         // Draw cursor if it's at EOF (one past the last byte)
-        if let cursor = currentCursor, cursor == buffer.count, buffer.count > 0 {
+        // Allow drawing if buffer is empty (cursor at 0)
+        if let cursor = currentCursor, cursor == buffer.count {
             let line = cursor / bytesPerRow
             if line >= firstLine && line <= lastLine {
                 let i = cursor % bytesPerRow
@@ -498,8 +510,46 @@ class HexTextView: NSView {
         guard let document = hexDocument, let cursor = currentCursor else { return }
         
         if isHexInputMode {
-            if char.hexDigitValue != nil {
-                // Hex input logic (placeholder for now as per previous code)
+            if let hexValue = char.hexDigitValue {
+                let nibble = UInt8(hexValue)
+                
+                if let pending = pendingHexNibble {
+                    // Second nibble: combine and insert/replace
+                    let byte = (pending << 4) | nibble
+                    pendingHexNibble = nil
+                    
+                    if currentSelection.count > 1 {
+                        // Multi-selection replace
+                        let sortedSelection = currentSelection.sorted()
+                        let insertionIndex = sortedSelection.first ?? cursor
+                        
+                        undoManager?.beginUndoGrouping()
+                        document.delete(indices: sortedSelection, undoManager: undoManager)
+                        document.insert(byte, at: insertionIndex, undoManager: undoManager)
+                        undoManager?.endUndoGrouping()
+                        
+                        let newCursor = insertionIndex + 1
+                        currentCursor = newCursor
+                        currentSelection = [newCursor]
+                        currentAnchor = newCursor
+                    } else {
+                        // Single cursor
+                        if isOverwriteMode && cursor < document.buffer.count {
+                            document.replace(at: cursor, with: byte, undoManager: undoManager)
+                        } else {
+                            document.insert(byte, at: cursor, undoManager: undoManager)
+                        }
+                        moveCursorRight()
+                    }
+                    
+                    onSelectionChanged?(currentSelection)
+                    onCursorChanged?(currentCursor)
+                    scrollToCursor()
+                    needsDisplay = true
+                } else {
+                    // First nibble: store it
+                    pendingHexNibble = nibble
+                }
             }
         } else {
             if let asciiValue = char.asciiValue {
@@ -530,7 +580,7 @@ class HexTextView: NSView {
                     needsDisplay = true
                 } else {
                     // Standard single cursor behavior
-                    if isOverwriteMode {
+                    if isOverwriteMode && cursor < document.buffer.count {
                         document.replace(at: cursor, with: asciiValue, undoManager: undoManager)
                     } else {
                         document.insert(asciiValue, at: cursor, undoManager: undoManager)
@@ -696,7 +746,20 @@ class HexTextView: NSView {
     func setSelection(_ selection: Set<Int>, anchor: Int?, cursor: Int?) {
         self.currentSelection = selection
         self.currentAnchor = anchor
-        self.currentCursor = cursor
+        
+        if let cursor = cursor {
+            self.currentCursor = cursor
+        } else if let doc = hexDocument, doc.buffer.count == 0 {
+            // Default to 0 for empty document to ensure it's editable
+            self.currentCursor = 0
+            if self.currentSelection.isEmpty {
+                self.currentSelection = [0]
+            }
+            self.currentAnchor = 0
+        } else {
+            self.currentCursor = nil
+        }
+        
         scrollToCursor()
         needsDisplay = true
     }
