@@ -641,7 +641,7 @@ class HexTextView: NSView {
         
         menu.addItem(NSMenuItem.separator())
         
-        menu.addItem(withTitle: "Select All", action: #selector(selectAll(_:)), keyEquivalent: "a")
+        menu.addItem(withTitle: "Select All", action: #selector(selectAllMenu), keyEquivalent: "a")
         
         return menu
     }
@@ -669,6 +669,16 @@ class HexTextView: NSView {
     @objc private func toggleBookmarkMenu() {
         guard let cursor = currentCursor else { return }
         toggleBookmark(at: cursor)
+    }
+    
+    @objc private func selectAllMenu() {
+        guard let document = hexDocument else { return }
+        currentSelection = Set(0..<document.buffer.count)
+        currentAnchor = 0
+        currentCursor = document.buffer.count - 1
+        onSelectionChanged?(currentSelection)
+        onCursorChanged?(currentCursor)
+        needsDisplay = true
     }
     
     private func pasteAsHex() {
