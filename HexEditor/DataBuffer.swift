@@ -58,7 +58,13 @@ struct GapBuffer: RandomAccessCollection {
         if start >= gapStart {
             let physicalStart = start + (gapEnd - gapStart)
             let physicalEnd = end + (gapEnd - gapStart)
-            return Array(buffer[physicalStart..<physicalEnd])
+            
+            // Ensure we don't exceed buffer bounds
+            let safePhysicalEnd = Swift.min(physicalEnd, buffer.count)
+            if physicalStart < safePhysicalEnd {
+                return Array(buffer[physicalStart..<safePhysicalEnd])
+            }
+            return []
         }
         
         // Case 3: Range spans the gap
@@ -71,28 +77,42 @@ struct GapBuffer: RandomAccessCollection {
         // Part after gap
         let physicalGapEnd = gapEnd
         let remaining = end - gapStart
-        result.append(contentsOf: buffer[physicalGapEnd..<physicalGapEnd + remaining])
+        let physicalEnd = Swift.min(physicalGapEnd + remaining, buffer.count)
+        
+        // Ensure we don't go beyond buffer bounds
+        if physicalGapEnd < physicalEnd {
+            result.append(contentsOf: buffer[physicalGapEnd..<physicalEnd])
+        }
         
         return result
     }
     
     /// Moves the gap to the specified index.
     mutating func moveGap(to index: Int) {
-        if index == gapStart { return }
+        // Clamp index to valid bounds
+        let safeIndex = Swift.max(0, Swift.min(index, buffer.count))
+        if safeIndex == gapStart { return }
         
         let gapSize = gapEnd - gapStart
         
-        if index < gapStart {
+        if safeIndex < gapStart {
             // Move gap left
-            buffer.replaceSubrange(index + gapSize..<gapStart + gapSize, with: buffer[index..<gapStart])
-            gapStart = index
+            buffer.replaceSubrange(safeIndex + gapSize..<gapStart + gapSize, with: buffer[safeIndex..<gapStart])
+            gapStart = safeIndex
             gapEnd = gapStart + gapSize
         } else {
             // Move gap right
-            let moveCount = index - gapStart
-            buffer.replaceSubrange(gapStart..<gapStart + moveCount, with: buffer[gapEnd..<gapEnd + moveCount])
-            gapStart += moveCount
-            gapEnd += moveCount
+            let moveCount = safeIndex - gapStart
+            
+            // Ensure we don't exceed buffer bounds
+            let availableBytes = buffer.count - gapEnd
+            let safeMoveCount = Swift.min(moveCount, availableBytes)
+            
+            if safeMoveCount > 0 {
+                buffer.replaceSubrange(gapStart..<gapStart + safeMoveCount, with: buffer[gapEnd..<gapEnd + safeMoveCount])
+                gapStart += safeMoveCount
+                gapEnd += safeMoveCount
+            }
         }
     }
     
@@ -123,6 +143,7 @@ struct GapBuffer: RandomAccessCollection {
     
     /// Deletes a byte at the specified index.
     mutating func delete(at index: Int) {
+        if index < 0 || index >= count { return }
         moveGap(to: index + 1)
         if gapStart > 0 {
             gapStart -= 1
@@ -131,8 +152,12 @@ struct GapBuffer: RandomAccessCollection {
     
     /// Deletes a range of bytes.
     mutating func delete(in range: Range<Int>) {
-        moveGap(to: range.upperBound)
-        gapStart -= range.count
+        let safeStart = Swift.max(0, range.lowerBound)
+        let safeEnd = Swift.min(range.upperBound, count)
+        if safeStart >= safeEnd { return }
+        
+        moveGap(to: safeEnd)
+        gapStart -= (safeEnd - safeStart)
     }
     
     /// Expands the gap when it's full.

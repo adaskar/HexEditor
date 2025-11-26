@@ -108,7 +108,8 @@ class HexTextView: NSView {
     private func updateIntrinsicContentSize() {
         guard let document = hexDocument else { return }
         let totalLines = CGFloat((document.buffer.count + bytesPerRow - 1) / bytesPerRow)
-        let height = totalLines * lineHeight + (verticalPadding * 2) // Add top and bottom padding
+        // Add one extra line for EOF cursor (when last row is full, EOF cursor is on next line)
+        let height = (totalLines + 1) * lineHeight + (verticalPadding * 2)
         // Width calculation - must match fixed layout in draw()
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
@@ -127,7 +128,8 @@ class HexTextView: NSView {
     override var intrinsicContentSize: NSSize {
         guard let document = hexDocument else { return NSSize(width: 600, height: 100) }
         let totalLines = CGFloat((document.buffer.count + bytesPerRow - 1) / bytesPerRow)
-        return NSSize(width: 600, height: totalLines * lineHeight + (verticalPadding * 2))
+        // Add one extra line for EOF cursor (when last row is full, EOF cursor is on next line)
+        return NSSize(width: 600, height: (totalLines + 1) * lineHeight + (verticalPadding * 2))
     }
     
     override func draw(_ dirtyRect: NSRect) {
@@ -567,7 +569,8 @@ class HexTextView: NSView {
             needsDisplay = true
         } else {
             // Standard backspace behavior (delete previous char)
-            if cursor > 0 {
+            // Ensure cursor is within valid bounds before attempting delete
+            if cursor > 0 && cursor <= document.buffer.count && cursor - 1 < document.buffer.count {
                 document.delete(at: cursor - 1, undoManager: undoManager)
                 moveCursorLeft()
             }
