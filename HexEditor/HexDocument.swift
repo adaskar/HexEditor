@@ -77,29 +77,66 @@ final class HexDocument: ReferenceFileDocument {
         }
     }
     
+    func delete(range: Range<Int>, undoManager: UndoManager? = nil) {
+        if readOnly {
+            requestDuplicate = true
+            return
+        }
+        
+        // Capture deleted bytes for undo
+        let deletedBytes = buffer.getBytes(in: range)
+        
+        // Perform deletion
+        buffer.delete(in: range)
+        
+        undoManager?.registerUndo(withTarget: self) { doc in
+            doc.insert(bytes: deletedBytes, at: range.lowerBound, undoManager: undoManager)
+        }
+    }
+    
     func delete(indices: [Int], undoManager: UndoManager? = nil) {
         if readOnly {
             requestDuplicate = true
             return
         }
-        // Indices must be sorted descending to avoid shifting issues during deletion
+        
+        // Sort indices descending to handle deletions from end to start
+        // This prevents index shifting affecting subsequent deletions
         let sortedIndices = indices.sorted(by: >)
-        var deletedBytes: [(Int, UInt8)] = []
-
-        for index in sortedIndices {
-            let byte = buffer[index]
-            deletedBytes.append((index, byte))
-            buffer.delete(at: index)
-        }
-
-        undoManager?.registerUndo(withTarget: self) { doc in
-            // To undo, we insert back. We need to insert in reverse order of deletion (ascending index)
-            // or just insert each one. Since we stored them, we can just iterate.
-            // If we deleted 5, then 4. We insert 4, then 5.
-            for (index, byte) in deletedBytes.reversed() {
-                doc.insert(byte, at: index, undoManager: undoManager)
+        
+        if sortedIndices.isEmpty { return }
+        
+        // Group consecutive indices into ranges
+        // Since we sorted descending, consecutive indices will be like: 10, 9, 8...
+        var ranges: [Range<Int>] = []
+        var currentRangeEnd = sortedIndices[0] + 1
+        var currentRangeStart = sortedIndices[0]
+        
+        for i in 1..<sortedIndices.count {
+            let index = sortedIndices[i]
+            if index == currentRangeStart - 1 {
+                // Consecutive, extend current range downwards
+                currentRangeStart = index
+            } else {
+                // Gap found, commit current range and start new one
+                ranges.append(currentRangeStart..<currentRangeEnd)
+                currentRangeEnd = index + 1
+                currentRangeStart = index
             }
         }
+        // Commit the last range
+        ranges.append(currentRangeStart..<currentRangeEnd)
+        
+        // Perform deletions
+        // Note: We built ranges from descending indices, so the ranges are already in descending order of position.
+        // e.g. if indices were [10, 9, 8, 5, 4], ranges are [8..<11, 4..<6]
+        // Deleting 8..<11 first is safe, then 4..<6.
+        
+        undoManager?.beginUndoGrouping()
+        for range in ranges {
+            delete(range: range, undoManager: undoManager)
+        }
+        undoManager?.endUndoGrouping()
     }
     
     func replace(at index: Int, with byte: UInt8, undoManager: UndoManager? = nil) {

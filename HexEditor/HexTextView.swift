@@ -509,11 +509,18 @@ class HexTextView: NSView {
         guard let document = hexDocument, let cursor = currentCursor else { return }
         
         if currentSelection.count > 1 {
-            // Delete all selected bytes
+            // Check if selection is contiguous
             let sortedSelection = currentSelection.sorted()
+            let isContiguous = sortedSelection.last! - sortedSelection.first! == sortedSelection.count - 1
+            
             let newCursorIndex = sortedSelection.first ?? 0
             
-            document.delete(indices: sortedSelection, undoManager: undoManager)
+            if isContiguous {
+                let range = sortedSelection.first!..<(sortedSelection.last! + 1)
+                document.delete(range: range, undoManager: undoManager)
+            } else {
+                document.delete(indices: sortedSelection, undoManager: undoManager)
+            }
             
             // Move cursor to the start of where the deletion happened
             let newCursor = min(newCursorIndex, document.buffer.count) // Ensure valid
