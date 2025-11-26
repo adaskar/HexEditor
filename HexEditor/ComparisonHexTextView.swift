@@ -45,6 +45,9 @@ class ComparisonHexTextView: NSView {
     }
     private var visibleRows: [VisibleRow] = []
     
+    // Highlight Animation
+    private var highlightLayer: CALayer?
+    
     // MARK: - Initialization
     
     override init(frame frameRect: NSRect) {
@@ -383,6 +386,43 @@ class ComparisonHexTextView: NSView {
             guard let document = hexDocument, offset < document.buffer.count else { return nil }
             return offset
         }
+    }
+    
+    func flashHighlight(at offset: Int) {
+        // Remove existing highlight if any
+        highlightLayer?.removeFromSuperlayer()
+        highlightLayer = nil
+        
+        guard let y = yPosition(for: offset) else { return }
+        
+        // Create new highlight layer
+        let layer = CALayer()
+        layer.backgroundColor = NSColor.systemYellow.cgColor
+        layer.frame = NSRect(x: 10, y: y + 1, width: bounds.width - 20, height: lineHeight - 2)
+        layer.cornerRadius = 4.0
+        layer.opacity = 0.8
+        
+        self.layer?.addSublayer(layer)
+        self.highlightLayer = layer
+        
+        // Animate opacity
+        let animation = CABasicAnimation(keyPath: "opacity")
+        animation.fromValue = 0.8
+        animation.toValue = 0.0
+        animation.duration = 0.6
+        animation.beginTime = CACurrentMediaTime() + 0.1 // Slight delay
+        animation.fillMode = .forwards
+        animation.isRemovedOnCompletion = false
+        
+        CATransaction.begin()
+        CATransaction.setCompletionBlock {
+            layer.removeFromSuperlayer()
+            if self.highlightLayer === layer {
+                self.highlightLayer = nil
+            }
+        }
+        layer.add(animation, forKey: "fadeOut")
+        CATransaction.commit()
     }
     
     private func updateColorCache() {

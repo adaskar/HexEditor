@@ -386,6 +386,12 @@ class HexTextView: NSView {
         var newCursor = cursor
         var handled = false
         
+        // Handle Backspace (Delete) first to prevent it being treated as input
+        if event.keyCode == 51 { // Delete
+            handleBackspace()
+            return
+        }
+
         // Navigation
         if let specialKey = event.specialKey {
             handled = true
@@ -456,10 +462,6 @@ class HexTextView: NSView {
                 // Typing
                 handleInput(char, event: event)
             }
-        }
-        
-        if event.keyCode == 51 { // Delete
-            handleBackspace()
         }
     }
     
