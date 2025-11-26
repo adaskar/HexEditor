@@ -71,7 +71,10 @@ struct HexGridView: NSViewRepresentable {
         textView.isOverwriteMode = isOverwriteMode
         
         // Sync selection from SwiftUI state
-        if textView.currentSelection != selection || textView.currentCursor != cursorIndex {
+        // Skip sync if we recently updated cursor locally (within 100ms) to avoid cursor jumping during rapid input
+        let skipCursorSync = context.coordinator.lastLocalCursorUpdate.map { Date().timeIntervalSince($0) < 0.1 } ?? false
+        
+        if !skipCursorSync && (textView.currentSelection != selection || textView.currentCursor != cursorIndex) {
             textView.setSelection(selection, anchor: selectionAnchor, cursor: cursorIndex)
         }
     }
@@ -80,6 +83,8 @@ struct HexGridView: NSViewRepresentable {
         var parent: HexGridView
         var cancellables = Set<AnyCancellable>()
         weak var textView: HexTextView?
+        fileprivate var pendingRegenerationTask: DispatchWorkItem?
+        fileprivate var lastLocalCursorUpdate: Date?
         
         init(_ parent: HexGridView) {
             self.parent = parent
@@ -97,10 +102,15 @@ struct HexGridView: NSViewRepresentable {
         }
         
         func regenerateTextView() {
-            // Trigger regeneration after a short delay to batch rapid changes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            // Cancel any pending regeneration to avoid stale updates during rapid input
+            pendingRegenerationTask?.cancel()
+            
+            // Schedule new regeneration with delay to batch rapid changes
+            let task = DispatchWorkItem { [weak self] in
                 self?.textView?.regenerateContent()
             }
+            pendingRegenerationTask = task
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: task)
         }
         
         func updateSelection(_ newSelection: Set<Int>) {
@@ -110,6 +120,9 @@ struct HexGridView: NSViewRepresentable {
         }
         
         func updateCursor(_ newCursor: Int?) {
+            // Track local cursor updates to prevent sync-back during rapid input
+            lastLocalCursorUpdate = Date()
+            
             DispatchQueue.main.async { [weak self] in
                 self?.parent.cursorIndex = newCursor
                 if let cursor = newCursor {
