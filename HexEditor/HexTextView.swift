@@ -108,12 +108,16 @@ class HexTextView: NSView {
         guard let document = hexDocument else { return }
         let totalLines = CGFloat((document.buffer.count + bytesPerRow - 1) / bytesPerRow)
         let height = totalLines * lineHeight
-        // Width calculation
+        // Width calculation - must match fixed layout in draw()
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
-        let hexSectionStartX = addressWidth + 10
-        let asciiStartX = hexSectionStartX + (CGFloat(bytesPerRow) * hexByteWidth) + (CGFloat(bytesPerRow / byteGrouping) * charWidth) + 20
-        let width = asciiStartX + (CGFloat(bytesPerRow) * charWidth) + 20
+        let hexBlockWidth = (CGFloat(bytesPerRow) * hexByteWidth) + (CGFloat(bytesPerRow / byteGrouping) * charWidth)
+        let asciiWidth = CGFloat(bytesPerRow) * charWidth
+        
+        // Fixed positions matching draw method
+        let hexSectionStartX = addressWidth + 20.0
+        let asciiStartX = hexSectionStartX + hexBlockWidth + 20.0
+        let width = asciiStartX + asciiWidth + 20.0
         
         self.frame.size = NSSize(width: max(width, self.superview?.bounds.width ?? width), height: height)
         self.invalidateIntrinsicContentSize()
@@ -152,27 +156,17 @@ class HexTextView: NSView {
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         
-        // Calculate dynamic layout positions
+        // Use FIXED layout positions to prevent shifting when bounds change
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
-        let asciiWidth = CGFloat(bytesPerRow) * charWidth
         
         // Calculate total width of hex block
         let hexBlockWidth = (CGFloat(bytesPerRow) * hexByteWidth) + (CGFloat(bytesPerRow / byteGrouping) * charWidth)
         
-        // Determine layout
-        let minWidth = addressWidth + hexBlockWidth + asciiWidth + 60 // Minimum padding
-        let availableWidth = max(bounds.width, minWidth)
-        
-        // Address is fixed left
+        // Use fixed positions - no dynamic centering
         let addressX: CGFloat = 5.0
-        
-        // ASCII is fixed right (with some padding)
-        let asciiStartX = availableWidth - asciiWidth - 20.0
-        
-        // Hex is centered in the remaining space
-        let availableForHex = asciiStartX - (addressWidth + 10.0)
-        let hexSectionStartX = (addressWidth + 10.0) + max(0, (availableForHex - hexBlockWidth) / 2.0)
+        let hexSectionStartX: CGFloat = addressWidth + 20.0  // Fixed offset from address
+        let asciiStartX: CGFloat = hexSectionStartX + hexBlockWidth + 20.0  // Fixed offset from hex
         
         // Draw Separator Line (Address | Hex)
         context.setStrokeColor(NSColor.separatorColor.withAlphaComponent(0.4).cgColor)
@@ -338,18 +332,13 @@ class HexTextView: NSView {
         let line = Int(point.y / lineHeight)
         if line < 0 { return nil }
         
-        // Calculate dynamic layout positions (must match draw)
+        // Use FIXED positions matching draw method
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
-        let asciiWidth = CGFloat(bytesPerRow) * charWidth
         let hexBlockWidth = (CGFloat(bytesPerRow) * hexByteWidth) + (CGFloat(bytesPerRow / byteGrouping) * charWidth)
         
-        let minWidth = addressWidth + hexBlockWidth + asciiWidth + 60
-        let availableWidth = max(bounds.width, minWidth)
-        
-        let asciiStartX = availableWidth - asciiWidth - 20.0
-        let availableForHex = asciiStartX - (addressWidth + 10.0)
-        let hexSectionStartX = (addressWidth + 10.0) + max(0, (availableForHex - hexBlockWidth) / 2.0)
+        let hexSectionStartX: CGFloat = addressWidth + 20.0  // Fixed offset from address
+        let asciiStartX: CGFloat = hexSectionStartX + hexBlockWidth + 20.0  // Fixed offset from hex
         
         // Check if in Hex area
         if point.x >= hexSectionStartX && point.x < asciiStartX {

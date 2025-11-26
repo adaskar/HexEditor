@@ -137,20 +137,17 @@ class ComparisonHexTextView: NSView {
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         
-        // Calculate dynamic layout positions (Centered)
+        // Use FIXED layout positions to prevent shifting when bounds change
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
         let asciiWidth = CGFloat(bytesPerRow) * charWidth
         let byteGrouping = 8
         let hexBlockWidth = (CGFloat(bytesPerRow) * hexByteWidth) + (CGFloat(bytesPerRow / byteGrouping) * charWidth)
         
-        let minWidth = addressWidth + hexBlockWidth + asciiWidth + 60
-        let availableWidth = max(bounds.width, minWidth)
-        
+        // Use fixed positions - no dynamic centering
         let addressX: CGFloat = 5.0
-        let asciiStartX = availableWidth - asciiWidth - 20.0
-        let availableForHex = asciiStartX - (addressWidth + 10.0)
-        let hexSectionStartX = (addressWidth + 10.0) + max(0, (availableForHex - hexBlockWidth) / 2.0)
+        let hexSectionStartX: CGFloat = addressWidth + 20.0  // Fixed offset from address
+        let asciiStartX: CGFloat = hexSectionStartX + hexBlockWidth + 20.0  // Fixed offset from hex
         
         // Draw Separator Line (Address | Hex)
         context.setStrokeColor(NSColor.separatorColor.withAlphaComponent(0.4).cgColor)
