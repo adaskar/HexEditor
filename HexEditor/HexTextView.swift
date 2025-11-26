@@ -54,6 +54,7 @@ class HexTextView: NSView {
     private let charWidth: CGFloat = 7.0 // Approximate for monospaced font
     private let gutterWidth: CGFloat = 80.0
     private let hexStart: CGFloat = 90.0
+    private let verticalPadding: CGFloat = 10.0 // Top and bottom padding
     
     // Fonts
     private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
@@ -107,7 +108,7 @@ class HexTextView: NSView {
     private func updateIntrinsicContentSize() {
         guard let document = hexDocument else { return }
         let totalLines = CGFloat((document.buffer.count + bytesPerRow - 1) / bytesPerRow)
-        let height = totalLines * lineHeight
+        let height = totalLines * lineHeight + (verticalPadding * 2) // Add top and bottom padding
         // Width calculation - must match fixed layout in draw()
         let addressWidth = 10 * charWidth
         let hexByteWidth = 3 * charWidth
@@ -126,7 +127,7 @@ class HexTextView: NSView {
     override var intrinsicContentSize: NSSize {
         guard let document = hexDocument else { return NSSize(width: 600, height: 100) }
         let totalLines = CGFloat((document.buffer.count + bytesPerRow - 1) / bytesPerRow)
-        return NSSize(width: 600, height: totalLines * lineHeight)
+        return NSSize(width: 600, height: totalLines * lineHeight + (verticalPadding * 2))
     }
     
     override func draw(_ dirtyRect: NSRect) {
@@ -187,7 +188,7 @@ class HexTextView: NSView {
             let byteIndex = line * bytesPerRow
             if byteIndex >= buffer.count { break }
             
-            let y = CGFloat(line) * lineHeight
+            let y = CGFloat(line) * lineHeight + verticalPadding
             
             // Draw Address
             let addressString = String(format: "%08X", byteIndex) as NSString
@@ -290,7 +291,7 @@ class HexTextView: NSView {
             let line = cursor / bytesPerRow
             if line >= firstLine && line <= lastLine {
                 let i = cursor % bytesPerRow
-                let y = CGFloat(line) * lineHeight
+                let y = CGFloat(line) * lineHeight + verticalPadding
                 
                 // Calculate positions
                 let groupCount = i / byteGrouping
@@ -353,7 +354,9 @@ class HexTextView: NSView {
     }
     
     private func indexAt(point: NSPoint) -> Int? {
-        let line = Int(point.y / lineHeight)
+        // Account for vertical padding
+        let adjustedY = point.y - verticalPadding
+        let line = Int(adjustedY / lineHeight)
         if line < 0 { return nil }
         
         // Use FIXED positions matching draw method
@@ -677,7 +680,7 @@ class HexTextView: NSView {
     private func scrollToCursor() {
         guard let cursor = currentCursor else { return }
         let line = cursor / bytesPerRow
-        let y = CGFloat(line) * lineHeight
+        let y = CGFloat(line) * lineHeight + verticalPadding
         let rect = NSRect(x: 0, y: y, width: bounds.width, height: lineHeight)
         scrollToVisible(rect)
     }
