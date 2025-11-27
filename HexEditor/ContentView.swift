@@ -301,6 +301,14 @@ struct ContentView: View {
                 comparisonDocument = nil
             }
         }
+        .onAppear {
+            // Select first byte on open
+            if selection.isEmpty {
+                selection = [0]
+                cursorIndex = 0
+                selectionAnchor = 0
+            }
+        }
     }
     
     private func loadComparisonFile(url: URL) {

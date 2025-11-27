@@ -107,6 +107,17 @@ class HexTextView: NSView {
         return true
     }
     
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        
+        // Claim focus when added to a window
+        if window != nil {
+            DispatchQueue.main.async { [weak self] in
+                self?.window?.makeFirstResponder(self)
+            }
+        }
+    }
+    
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         colorCache.removeAll()
@@ -748,7 +759,22 @@ class HexTextView: NSView {
     private func scrollToCursor() {
         guard let cursor = currentCursor else { return }
         let line = cursor / bytesPerRow
+        
+        // Special handling for first line - always ensure we're at the very top
+        if line == 0 {
+            if visibleRect.minY != 0 {
+                scroll(NSPoint(x: visibleRect.minX, y: 0))
+            }
+            return
+        }
+        
         let y = CGFloat(line) * lineHeight + verticalPadding
+        
+        // Check if line is already fully visible vertically
+        if y >= visibleRect.minY && (y + lineHeight) <= visibleRect.maxY {
+            return
+        }
+        
         let rect = NSRect(x: 0, y: y, width: bounds.width, height: lineHeight)
         scrollToVisible(rect)
     }
