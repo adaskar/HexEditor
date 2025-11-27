@@ -18,6 +18,11 @@ struct QuickActionsView: View {
     @State private var patternType: PatternType = .incremental
     @State private var startValue: String = "00"
     @State private var showExportPanel = false
+    @State private var showDuplicateAlert = false
+    @State private var showFileExporter = false
+    
+    // Helper for file export
+    @State private var duplicateFilename: String = "Untitled.duplicated"
     
     enum PatternType: String, CaseIterable {
         case incremental = "Incremental"
@@ -150,6 +155,38 @@ struct QuickActionsView: View {
             defaultFilename: "selection.bin"
         ) { result in
             // Handle export result
+        }
+        .onChange(of: document.requestDuplicate) { _, newValue in
+            if newValue {
+                showDuplicateAlert = true
+                document.requestDuplicate = false
+            }
+        }
+        .confirmationDialog("Read-Only Document", isPresented: $showDuplicateAlert, titleVisibility: .visible) {
+            Button("Duplicate", role: .none) {
+                if let filename = document.filename {
+                    duplicateFilename = filename + ".duplicated"
+                }
+                showFileExporter = true
+            }
+            Button("Edit Directly", role: .destructive) {
+                document.readOnly = false
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This document is read-only. How would you like to proceed?")
+        }
+        .fileExporter(
+            isPresented: $showFileExporter,
+            document: document,
+            contentType: .item,
+            defaultFilename: duplicateFilename
+        ) { result in
+            if case .success(let url) = result {
+                // Handle duplication success if needed
+                // For now just make editable as we are in a sheet
+                document.readOnly = false
+            }
         }
     }
     

@@ -47,7 +47,7 @@ struct StatisticsView: View {
                 VStack {
                     Spacer()
                     ProgressView("Analyzing file...")
-                        .scaleEffect(1.2)
+                        .controlSize(.large)
                     Spacer()
                 }
             } else {

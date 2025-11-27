@@ -129,7 +129,7 @@ struct SearchView: View {
             if isSearching {
                 HStack {
                     ProgressView()
-                        .scaleEffect(0.5)
+                        .controlSize(.small)
                     Text("Searching...")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -138,7 +138,7 @@ struct SearchView: View {
             } else if isReplacing {
                 HStack {
                     ProgressView()
-                        .scaleEffect(0.5)
+                        .controlSize(.small)
                     Text("Replacing...")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -432,14 +432,9 @@ struct SearchView: View {
         // Perform replace
         await MainActor.run {
             // Delete old bytes and insert new ones
-            document.buffer.delete(in: min..<(min + searchBytes.count))
-            document.buffer.insert(replaceBytes, at: min)
-            
-            // Register undo
-            undoManager?.registerUndo(withTarget: document) { doc in
-                doc.buffer.delete(in: min..<(min + replaceBytes.count))
-                doc.buffer.insert(searchBytes, at: min)
-            }
+            // Use document methods to ensure read-only check and undo registration
+            document.delete(range: min..<(min + searchBytes.count), undoManager: undoManager)
+            document.insert(bytes: replaceBytes, at: min, undoManager: undoManager)
             
             // Update selection to new replaced bytes
             selection = Set(min..<(min + replaceBytes.count))
@@ -495,19 +490,13 @@ struct SearchView: View {
         }
         
         await MainActor.run {
-            // Perform replacements from end to start to avoid index shifting
             undoManager?.beginUndoGrouping()
             
+            // Perform replacements in reverse order to maintain indices
             for replacement in replacements.reversed() {
-                let idx = replacement.index
-                document.buffer.delete(in: idx..<(idx + searchBytes.count))
-                document.buffer.insert(replaceBytes, at: idx)
-                
-                // Register individual undo
-                undoManager?.registerUndo(withTarget: document) { doc in
-                    doc.buffer.delete(in: idx..<(idx + replaceBytes.count))
-                    doc.buffer.insert(searchBytes, at: idx)
-                }
+                let range = replacement.index..<(replacement.index + searchBytes.count)
+                document.delete(range: range, undoManager: undoManager)
+                document.insert(bytes: replaceBytes, at: range.lowerBound, undoManager: undoManager)
             }
             
             undoManager?.endUndoGrouping()

@@ -14,7 +14,6 @@ struct ExportView: View {
     @Binding var isPresented: Bool
     
     @State private var selectedFormat: ExportFormat = .cArray
-    @State private var exportScope: ExportScope = .selection
     @State private var preview: String = ""
     @State private var isGenerating = false
     
@@ -60,11 +59,6 @@ struct ExportView: View {
         }
     }
     
-    enum ExportScope: String, CaseIterable {
-        case selection = "Selection"
-        case entire = "Entire File"
-    }
-    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -80,40 +74,32 @@ struct ExportView: View {
                 .buttonStyle(.plain)
                 .focusable(false)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .frame(height: 60)
+            .frame(maxWidth: .infinity)
             
             Divider()
             
-            HSplitView {
+            HStack(spacing: 0) {
                 // Left panel - Options
                 VStack(alignment: .leading, spacing: 16) {
-                    // Scope selection
-                    GroupBox(label: Label("Scope", systemImage: "scope")) {
-                        Picker("", selection: $exportScope) {
-                            ForEach(ExportScope.allCases, id: \.self) { scope in
-                                Text(scope.rawValue).tag(scope)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .disabled(selection.isEmpty && exportScope == .selection)
-                        
-                        if exportScope == .selection {
-                            if selection.isEmpty {
-                                Text("No selection")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            } else {
-                                Text("\(selection.count) bytes selected")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            }
-                        } else {
-                            Text("\(document.buffer.count) bytes")
+                    // Selection info
+                    GroupBox(label: Label("Export Selection", systemImage: "selection.pin.in.out")) {
+                        if selection.isEmpty {
+                            Text("No bytes selected")
                                 .foregroundColor(.secondary)
                                 .font(.caption)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("\(selection.count) bytes selected")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                     .padding(.horizontal)
+                    .padding(.top, 8)
                     
                     // Format selection
                     GroupBox(label: Label("Format", systemImage: "doc.text")) {
@@ -130,9 +116,11 @@ struct ExportView: View {
                                                 .foregroundColor(.accentColor)
                                         }
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                .focusable(false)
                                 .padding(.vertical, 4)
                                 .padding(.horizontal, 8)
                                 .background(selectedFormat == format ? Color.accentColor.opacity(0.1) : Color.clear)
@@ -203,6 +191,7 @@ struct ExportView: View {
                     .padding()
                 }
                 .frame(width: 300)
+                .background(Color(NSColor.controlBackgroundColor))
                 
                 Divider()
                 
@@ -214,7 +203,7 @@ struct ExportView: View {
                         Spacer()
                         if isGenerating {
                             ProgressView()
-                                .scaleEffect(0.7)
+                                .controlSize(.small)
                         }
                     }
                     .padding()
@@ -234,26 +223,18 @@ struct ExportView: View {
         }
         .frame(width: 800, height: 600)
         .onChange(of: selectedFormat) { _, _ in generatePreview() }
-        .onChange(of: exportScope) { _, _ in generatePreview() }
         .onChange(of: variableName) { _, _ in if selectedFormat == .cArray { generatePreview() } }
         .onChange(of: bytesPerLine) { _, _ in if selectedFormat == .cArray || selectedFormat == .hexDump { generatePreview() } }
         .onChange(of: includeLength) { _, _ in if selectedFormat == .cArray { generatePreview() } }
         .onChange(of: showOffsets) { _, _ in if selectedFormat == .hexDump { generatePreview() } }
         .onChange(of: showASCII) { _, _ in if selectedFormat == .hexDump { generatePreview() } }
         .onAppear {
-            if selection.isEmpty {
-                exportScope = .entire
-            }
             generatePreview()
         }
     }
     
     private func getExportData() -> [UInt8] {
-        if exportScope == .selection && !selection.isEmpty {
-            return selection.sorted().map { document.buffer[$0] }
-        } else {
-            return (0..<document.buffer.count).map { document.buffer[$0] }
-        }
+        return selection.sorted().map { document.buffer[$0] }
     }
     
     private func generatePreview() {

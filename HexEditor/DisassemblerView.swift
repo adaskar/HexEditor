@@ -101,7 +101,7 @@ struct DisassemblerView: View {
             if isDisassembling {
                 HStack {
                     ProgressView()
-                        .scaleEffect(0.7)
+                        .controlSize(.small)
                     Text("Disassembling...")
                         .font(.caption)
                         .foregroundColor(.secondary)

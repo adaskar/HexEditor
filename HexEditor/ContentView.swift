@@ -30,7 +30,7 @@ struct ContentView: View {
     @State private var selectionAnchor: Int? = nil
     @State private var showDuplicateAlert = false
     @State private var showFileExporter = false
-    @State private var showEditWarning = false
+
     @State private var showExport = false
     @State private var showDisassembler = false
     @State private var showMetadataEditor = false
@@ -202,8 +202,11 @@ struct ContentView: View {
         }
         .onChange(of: document.requestDuplicate) { _, newValue in
             if newValue {
-                showDuplicateAlert = true
-                document.requestDuplicate = false
+                // Only handle if QuickActions is not active (it handles it internally)
+                if !showQuickActions {
+                    showDuplicateAlert = true
+                    document.requestDuplicate = false
+                }
             }
         }
         .sheet(isPresented: $showJumpToOffset) {
@@ -261,22 +264,13 @@ struct ContentView: View {
                 showFileExporter = true
             }
             Button("Edit Directly", role: .destructive) {
-                showEditWarning = true
+                document.readOnly = false
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This document is read-only. How would you like to proceed?")
         }
-        .alert(isPresented: $showEditWarning) {
-            Alert(
-                title: Text("Warning"),
-                message: Text("Editing this file directly may overwrite the original data. Are you sure you want to continue?"),
-                primaryButton: .destructive(Text("Yes, Edit")) {
-                    document.readOnly = false
-                },
-                secondaryButton: .cancel()
-            )
-        }
+
         .fileExporter(
             isPresented: $showFileExporter,
             document: document,

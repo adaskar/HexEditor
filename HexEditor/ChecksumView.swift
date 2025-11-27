@@ -116,8 +116,7 @@ struct ChecksumView: View {
             HStack {
                 if isCalculating {
                     ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 12, height: 12)
+                        .controlSize(.small)
                     
                     Text("Calculating...")
                         .font(.caption)
@@ -206,8 +205,7 @@ struct ChecksumView: View {
             if hash == "Calculating..." {
                 HStack(spacing: 6) {
                     ProgressView()
-                        .scaleEffect(0.5)
-                        .frame(width: 10, height: 10)
+                        .controlSize(.mini)
                     
                     Text("Computing hash...")
                         .font(.caption2)
