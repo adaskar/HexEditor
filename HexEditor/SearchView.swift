@@ -47,6 +47,7 @@ struct SearchView: View {
                         .font(.title2)
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
                 .focusable(false)
             }
             .padding(.bottom, 4)
@@ -441,7 +442,10 @@ struct SearchView: View {
             cursorIndex = min + replaceBytes.count - 1
             selectionAnchor = min
             
-            replaceMessage = "Replaced 1 occurrence"
+            // Only update message if not read-only (or if edit was successful)
+            if !document.readOnly {
+                replaceMessage = "Replaced 1 occurrence"
+            }
             isReplacing = false
             
             // Auto-search for next occurrence
@@ -506,7 +510,9 @@ struct SearchView: View {
             cursorIndex = nil
             selectionAnchor = nil
             
-            replaceMessage = "Replaced \(replacements.count) occurrence\(replacements.count == 1 ? "" : "s")"
+            if !document.readOnly {
+                replaceMessage = "Replaced \(replacements.count) occurrence\(replacements.count == 1 ? "" : "s")"
+            }
             isReplacing = false
         }
     }
