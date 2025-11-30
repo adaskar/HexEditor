@@ -1,6 +1,6 @@
 //
 //  BookmarkManager.swift
-//  HexEditor
+//  HxEditor
 //
 //  Manage bookmarks for important file offsets
 //

@@ -1,6 +1,6 @@
 //
 //  StatusBarView.swift
-//  HexEditor
+//  HxEditor
 //
 //  Status bar showing file and selection information
 //

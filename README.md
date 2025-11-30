@@ -1,4 +1,4 @@
-# HexEditor
+# HxEditor
 
 A powerful, native macOS hex editor built with SwiftUI, featuring advanced editing capabilities, multiple byte selection, and an intuitive interface inspired by professional hex editors.
 
@@ -215,13 +215,13 @@ Visualize binary data as images:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/HexEditor.git
-cd HexEditor
+git clone https://github.com/yourusername/HxEditor.git
+cd HxEditor
 ```
 
 2. Open in Xcode:
 ```bash
-open HexEditor.xcodeproj
+open HxEditor.xcodeproj
 ```
 
 3. Build and run (⌘R)
@@ -230,7 +230,7 @@ open HexEditor.xcodeproj
 
 ### Opening Files
 
-- Launch HexEditor and use File → Open (⌘O)
+- Launch HxEditor and use File → Open (⌘O)
 - Or drag and drop a file onto the app icon
 
 ### Basic Editing
@@ -297,9 +297,9 @@ open HexEditor.xcodeproj
 ## Project Structure
 
 ```
-HexEditor/
-├── HexEditor/
-│   ├── HexEditorApp.swift              # App entry point
+HxEditor/
+├── HxEditor/
+│   ├── HxEditorApp.swift              # App entry point
 │   ├── ContentView.swift                # Main view with toolbar
 │   ├── HexGridView.swift                # Hex/ASCII grid display
 │   ├── HexRowView.swift                 # Individual row rendering
@@ -356,4 +356,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**HexEditor** - A modern, powerful hex editor for macOS
+**HxEditor** - A modern, powerful hex editor for macOS

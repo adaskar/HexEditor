@@ -1,6 +1,6 @@
 //
 //  HexInputHelper.swift
-//  HexEditor
+//  HxEditor
 //
 //  Helper for hex input mode functionality
 //

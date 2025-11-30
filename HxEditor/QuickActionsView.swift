@@ -1,6 +1,6 @@
 //
 //  QuickActionsView.swift
-//  HexEditor
+//  HxEditor
 //
 //  Quick actions panel for common operations
 //

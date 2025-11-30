@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  HexEditor
+//  HxEditor
 //
 //  Created by guru on 23.11.2025.
 //

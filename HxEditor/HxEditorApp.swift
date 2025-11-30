@@ -1,6 +1,6 @@
 //
-//  HexEditorApp.swift
-//  HexEditor
+//  HxEditorApp.swift
+//  HxEditor
 //
 //  Created by guru on 23.11.2025.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct HexEditorApp: App {
+struct HxEditorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @AppStorage("quitWhenLastWindowClosed") private var quitWhenLastWindowClosed = false
     

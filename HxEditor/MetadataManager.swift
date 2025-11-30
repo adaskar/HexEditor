@@ -1,6 +1,6 @@
 //
 //  MetadataManager.swift
-//  HexEditor
+//  HxEditor
 //
 //  Manages custom file metadata persistence
 //

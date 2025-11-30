@@ -1,6 +1,6 @@
 //
 //  FileInfoView.swift
-//  HexEditor
+//  HxEditor
 //
 //  Enhanced file information and inspector panel
 //

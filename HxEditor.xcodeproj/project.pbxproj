@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		CAC280C52ED32C5700485736 /* HexEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HexEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CAC280C52ED32C5700485736 /* HxEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HxEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CAC281752ED38EDC00485736 /* Exceptions for "HexEditor" folder in "HexEditor" target */ = {
+		CAC281752ED38EDC00485736 /* Exceptions for "HxEditor" folder in "HxEditor" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = CAC280C42ED32C5700485736 /* HexEditor */;
+			target = CAC280C42ED32C5700485736 /* HxEditor */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CAC280C72ED32C5700485736 /* HexEditor */ = {
+		CAC280C72ED32C5700485736 /* HxEditor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CAC281752ED38EDC00485736 /* Exceptions for "HexEditor" folder in "HexEditor" target */,
+				CAC281752ED38EDC00485736 /* Exceptions for "HxEditor" folder in "HxEditor" target */,
 			);
-			path = HexEditor;
+			path = HxEditor;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -45,7 +45,7 @@
 		CAC280BC2ED32C5700485736 = {
 			isa = PBXGroup;
 			children = (
-				CAC280C72ED32C5700485736 /* HexEditor */,
+				CAC280C72ED32C5700485736 /* HxEditor */,
 				CAC280C62ED32C5700485736 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,7 +53,7 @@
 		CAC280C62ED32C5700485736 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CAC280C52ED32C5700485736 /* HexEditor.app */,
+				CAC280C52ED32C5700485736 /* HxEditor.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,9 +61,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CAC280C42ED32C5700485736 /* HexEditor */ = {
+		CAC280C42ED32C5700485736 /* HxEditor */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CAC280D02ED32C5700485736 /* Build configuration list for PBXNativeTarget "HexEditor" */;
+			buildConfigurationList = CAC280D02ED32C5700485736 /* Build configuration list for PBXNativeTarget "HxEditor" */;
 			buildPhases = (
 				CAC280C12ED32C5700485736 /* Sources */,
 				CAC280C22ED32C5700485736 /* Frameworks */,
@@ -74,13 +74,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CAC280C72ED32C5700485736 /* HexEditor */,
+				CAC280C72ED32C5700485736 /* HxEditor */,
 			);
-			name = HexEditor;
+			name = HxEditor;
 			packageProductDependencies = (
 			);
-			productName = HexEditor;
-			productReference = CAC280C52ED32C5700485736 /* HexEditor.app */;
+			productName = HxEditor;
+			productReference = CAC280C52ED32C5700485736 /* HxEditor.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@
 					};
 				};
 			};
-			buildConfigurationList = CAC280C02ED32C5700485736 /* Build configuration list for PBXProject "HexEditor" */;
+			buildConfigurationList = CAC280C02ED32C5700485736 /* Build configuration list for PBXProject "HxEditor" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CAC280C42ED32C5700485736 /* HexEditor */,
+				CAC280C42ED32C5700485736 /* HxEditor */,
 			);
 		};
 /* End PBXProject section */
@@ -263,7 +263,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = HexEditor/HexEditor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = HxEditor/HxEditor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -273,7 +273,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = HexEditor/Info.plist;
+				INFOPLIST_FILE = HxEditor/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -281,8 +281,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = com.adaskar.HexEditor;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.adaskar.HxEditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -299,7 +299,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = HexEditor/HexEditor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = HxEditor/HxEditor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -309,7 +309,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = HexEditor/Info.plist;
+				INFOPLIST_FILE = HxEditor/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -317,8 +317,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = com.adaskar.HexEditor;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.adaskar.HxEditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -333,7 +333,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		CAC280C02ED32C5700485736 /* Build configuration list for PBXProject "HexEditor" */ = {
+		CAC280C02ED32C5700485736 /* Build configuration list for PBXProject "HxEditor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CAC280CE2ED32C5700485736 /* Debug */,
@@ -342,7 +342,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CAC280D02ED32C5700485736 /* Build configuration list for PBXNativeTarget "HexEditor" */ = {
+		CAC280D02ED32C5700485736 /* Build configuration list for PBXNativeTarget "HxEditor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CAC280D12ED32C5700485736 /* Debug */,

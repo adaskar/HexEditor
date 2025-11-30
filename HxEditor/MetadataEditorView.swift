@@ -1,6 +1,6 @@
 //
 //  MetadataEditorView.swift
-//  HexEditor
+//  HxEditor
 //
 //  File metadata editor
 //

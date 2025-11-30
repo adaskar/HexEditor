@@ -1,6 +1,6 @@
 //
 //  ByteColorScheme.swift
-//  HexEditor
+//  HxEditor
 //
 //  Premium color scheme for different byte types - OPTIMIZED
 //  Pre-computed lookup tables eliminate runtime calculations
