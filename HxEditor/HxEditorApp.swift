@@ -10,17 +10,10 @@ import SwiftUI
 @main
 struct HxEditorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @AppStorage("quitWhenLastWindowClosed") private var quitWhenLastWindowClosed = false
     
     var body: some Scene {
         DocumentGroup(newDocument: { HexDocument() }) { configuration in
             ContentView(document: configuration.document)
-        }
-        .commands {
-            CommandGroup(replacing: .appSettings) {
-                Toggle("Quit When Last Window Closed", isOn: $quitWhenLastWindowClosed)
-                    .keyboardShortcut(",", modifiers: [.command])
-            }
         }
     }
 }
@@ -30,10 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         hasFinishedLaunching = true
-        // If no documents are open (e.g. not launched by opening a file), show the Open Panel
-        if NSDocumentController.shared.documents.isEmpty {
-            NSDocumentController.shared.openDocument(nil)
-        }
     }
     
     func application(_ app: NSApplication, shouldRestoreApplicationState coder: NSCoder) -> Bool {
@@ -58,30 +47,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // Don't quit during app launch
-        guard hasFinishedLaunching else {
-            return false
-        }
-        
-        // Only quit if preference is enabled
-        guard UserDefaults.standard.bool(forKey: "quitWhenLastWindowClosed") else {
-            return false
-        }
-        
-        // Delay the check to allow new documents to be created (e.g. after Open Panel closes)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            // Check if there are any open documents
-            if NSDocumentController.shared.documents.isEmpty {
-                // Double check for any visible windows (like Settings)
-                let hasVisibleWindows = NSApp.windows.contains { $0.isVisible && !($0.contentView is NSTextView) }
-                
-                if !hasVisibleWindows {
-                    NSApp.terminate(nil)
-                }
-            }
-        }
-        
-        return false
-    }
+
 }
