@@ -29,10 +29,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
     
-    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        // Don't open untitled file on launch - this prevents empty document
-        // when dropping a file on the app icon for the first time
-        return false
+    
+    func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+        let url = URL(fileURLWithPath: filename)
+        NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, _ in }
+        return true
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
